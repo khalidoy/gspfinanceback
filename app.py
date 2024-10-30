@@ -13,9 +13,10 @@ db = MongoEngine()
 
 def create_app():
     app = Flask(__name__)
+    # Load configuration from Config class
     app.config.from_object(Config)
     
-    # Initialize extensions
+    # Initialize MongoDB with the app
     db.init_app(app)
     
     # Enable CORS for all routes and origins
@@ -28,11 +29,11 @@ def create_app():
     from routes.depences import depences_bp
     from routes.accounting import accounting_bp
     from routes.schoolyearperiods import schoolyearperiods_bp
-    from routes.reports import reports_bp  # Import the reports blueprint
-    from routes.creditreports import creditreports_bp  # Import the creditreports blueprint
+    from routes.reports import reports_bp
+    from routes.creditreports import creditreports_bp
     from routes.dailyaccreport import dailyacc_bp
     from routes.transportreport import transport_bp  
-    from routes.paymentsReport import payments_report_bp  # Import the payments_report blueprint
+    from routes.paymentsReport import payments_report_bp
     
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(students_bp, url_prefix='/students')
@@ -40,11 +41,11 @@ def create_app():
     app.register_blueprint(depences_bp, url_prefix='/depences')
     app.register_blueprint(accounting_bp, url_prefix='/accounting')
     app.register_blueprint(schoolyearperiods_bp, url_prefix='/schoolyearperiods')
-    app.register_blueprint(reports_bp, url_prefix='/reports')  # Register the reports blueprint
-    app.register_blueprint(creditreports_bp, url_prefix='/creditreports')  # Register the creditreports blueprint
+    app.register_blueprint(reports_bp, url_prefix='/reports')
+    app.register_blueprint(creditreports_bp, url_prefix='/creditreports')
     app.register_blueprint(dailyacc_bp, url_prefix='/dailyacc')
     app.register_blueprint(transport_bp, url_prefix='/transport')
-    app.register_blueprint(payments_report_bp, url_prefix='/payments-report')  # Register the payments_report blueprint
+    app.register_blueprint(payments_report_bp, url_prefix='/payments-report')
     
     # Setup Logging
     if not os.path.exists('logs'):
@@ -63,5 +64,6 @@ def create_app():
 
 app = create_app()
 
+# Run the app with host and port configured for production
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
