@@ -17,14 +17,11 @@ def create_app():
     # Load configuration from Config class
     app.config.from_object(Config)
     
+    # Initialize MongoDB with the app immediately
+    db.init_app(app)
+    
     # Enable CORS for all routes and origins
     CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False)
-
-    # Initialize MongoDB only when a request is received
-    @app.before_request
-    def initialize_db():
-        if db.connection is None:  # Only connect if not already connected
-            db.init_app(app)
 
     # Register Blueprints
     register_blueprints(app)
