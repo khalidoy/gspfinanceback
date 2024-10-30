@@ -33,18 +33,31 @@ def create_app():
     app.logger.info('GSP Finance Backend Startup')
 
     # Test route to check MongoDB connection
-    @app.route('/test-db')
+    @app.route('/test-db', methods=['GET'])
     def test_db():
         """
         Test route to verify MongoDB connectivity and retrieve sample data from SchoolYearPeriod.
         """
         try:
-            # Attempt a query on the SchoolYearPeriod collection
-            periods = db.connection.SchoolYearPeriod.objects.limit(3)  # Replace with the actual collection access
-            period_data = [{"name": period.name, "start_date": period.start_date, "end_date": period.end_date} for period in periods]
+            from models import SchoolYearPeriod  # Ensure correct import
+
+            # Query the SchoolYearPeriod collection for the first 3 documents
+            periods = SchoolYearPeriod.objects.limit(3)
+            
+            # Format data for the response
+            period_data = [
+                {
+                    "name": period.name, 
+                    "start_date": period.start_date.isoformat(), 
+                    "end_date": period.end_date.isoformat()
+                } 
+                for period in periods
+            ]
+            
             return jsonify({"status": "success", "message": "Connected to MongoDB", "data": period_data}), 200
 
         except Exception as e:
+            # Log the error if the database connection fails
             app.logger.error(f"Database connection failed: {e}")
             return jsonify({"status": "error", "message": f"Database connection failed: {str(e)}"}), 500
 
