@@ -1,6 +1,6 @@
 # app.py
 
-from flask import Flask
+from flask import Flask, jsonify
 from flask_mongoengine import MongoEngine
 from config import Config
 import logging
@@ -24,6 +24,28 @@ def create_app():
     CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False)
     
     # Register Blueprints
+    register_blueprints(app)
+    
+    # Setup Logging
+    setup_logging(app)
+    
+    # Log startup message
+    app.logger.info('GSP Finance Backend Startup')
+
+    # Test route to check MongoDB connection
+    @app.route('/test-db')
+    def test_db():
+        try:
+            # Attempt a simple ping command to MongoDB
+            db.connection.admin.command('ping')
+            return jsonify({"status": "success", "message": "Connected to MongoDB"}), 200
+        except Exception as e:
+            app.logger.error(f"Database connection failed: {e}")
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+    return app
+
+def register_blueprints(app):
     from routes.auth import auth_bp
     from routes.students import students_bp
     from routes.payments import payments_bp
@@ -48,14 +70,6 @@ def create_app():
     app.register_blueprint(dailyacc_bp, url_prefix='/dailyacc')
     app.register_blueprint(transport_bp, url_prefix='/transport')
     app.register_blueprint(payments_report_bp, url_prefix='/payments-report')
-    
-    # Setup Logging
-    setup_logging(app)
-    
-    # Log startup message
-    app.logger.info('GSP Finance Backend Startup')
-
-    return app
 
 def setup_logging(app):
     # Create logs directory if it doesn’t exist
@@ -67,11 +81,11 @@ def setup_logging(app):
     file_handler.setFormatter(logging.Formatter(
         '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
     ))
-    file_handler.setLevel(logging.INFO)
+    file_handler.setLevel(logging.DEBUG)  # Set to DEBUG level for detailed logs
     
     # Add the file handler to Flask’s logger
     app.logger.addHandler(file_handler)
-    app.logger.setLevel(logging.INFO)
+    app.logger.setLevel(logging.DEBUG)
 
 app = create_app()
 
