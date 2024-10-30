@@ -13,6 +13,7 @@ db = MongoEngine()
 
 def create_app():
     app = Flask(__name__)
+    
     # Load configuration from Config class
     app.config.from_object(Config)
     
@@ -35,6 +36,7 @@ def create_app():
     from routes.transportreport import transport_bp  
     from routes.paymentsReport import payments_report_bp
     
+    # Register each blueprint with a URL prefix
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(students_bp, url_prefix='/students')
     app.register_blueprint(payments_bp, url_prefix='/payments')
@@ -48,19 +50,28 @@ def create_app():
     app.register_blueprint(payments_report_bp, url_prefix='/payments-report')
     
     # Setup Logging
+    setup_logging(app)
+    
+    # Log startup message
+    app.logger.info('GSP Finance Backend Startup')
+
+    return app
+
+def setup_logging(app):
+    # Create logs directory if it doesn’t exist
     if not os.path.exists('logs'):
         os.mkdir('logs')
+        
+    # Setup file-based rotating logging
     file_handler = RotatingFileHandler('logs/gsp_finance.log', maxBytes=10240, backupCount=10)
     file_handler.setFormatter(logging.Formatter(
         '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
     ))
     file_handler.setLevel(logging.INFO)
-    app.logger.addHandler(file_handler)
     
+    # Add the file handler to Flask’s logger
+    app.logger.addHandler(file_handler)
     app.logger.setLevel(logging.INFO)
-    app.logger.info('GSP Finance Backend Startup')
-
-    return app
 
 app = create_app()
 
