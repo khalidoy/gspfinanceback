@@ -17,12 +17,15 @@ def create_app():
     # Load configuration from Config class
     app.config.from_object(Config)
     
-    # Initialize MongoDB with the app
-    db.init_app(app)
-    
     # Enable CORS for all routes and origins
     CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False)
-    
+
+    # Initialize MongoDB only when a request is received
+    @app.before_request
+    def initialize_db():
+        if db.connection is None:  # Only connect if not already connected
+            db.init_app(app)
+
     # Register Blueprints
     register_blueprints(app)
     
@@ -35,13 +38,18 @@ def create_app():
     # Test route to check MongoDB connection
     @app.route('/test-db')
     def test_db():
+        """
+        Test route to verify MongoDB connectivity and retrieve sample data from SchoolYearPeriod.
+        """
         try:
-            # Attempt a simple ping command to MongoDB
-            db.connection.admin.command('ping')
-            return jsonify({"status": "success", "message": "Connected to MongoDB"}), 200
+            # Attempt a query on the SchoolYearPeriod collection
+            periods = db.connection.SchoolYearPeriod.objects.limit(3)  # Replace with the actual collection access
+            period_data = [{"name": period.name, "start_date": period.start_date, "end_date": period.end_date} for period in periods]
+            return jsonify({"status": "success", "message": "Connected to MongoDB", "data": period_data}), 200
+
         except Exception as e:
             app.logger.error(f"Database connection failed: {e}")
-            return jsonify({"status": "error", "message": str(e)}), 500
+            return jsonify({"status": "error", "message": f"Database connection failed: {str(e)}"}), 500
 
     return app
 
