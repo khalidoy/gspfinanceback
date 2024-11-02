@@ -17,6 +17,8 @@ def create_app():
     # Load configuration from Config class
     app.config.from_object(Config)
     
+    # Log the MONGO_URI to verify it's being read correctly
+    app.logger.debug(f"MONGO_URI from config: {app.config.get('MONGO_URI')}")
     # Initialize MongoDB with the app immediately
     db.init_app(app)
     

@@ -23,3 +23,5 @@ Traceback (most recent call last):
            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
 KeyError: 'mongoengine'
 2024-10-30 18:10:03,024 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:33]
+2024-11-02 23:24:15,200 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:33]
+2024-11-03 00:17:06,048 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:35]
