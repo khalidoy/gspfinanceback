@@ -16,10 +16,11 @@ def create_app():
     
     # Load configuration from Config class
     app.config.from_object(Config)
-    print((f"MONGO_URI from config: {app.config.get('MONGO_URI')}"))
-    # Log the MONGO_URI to verify it's being read correctly
-    app.logger.debug(f"MONGO_URI from config: {app.config.get('MONGO_URI')}")
-    # Initialize MongoDB with the app immediately
+    
+    # Log the MONGODB_SETTINGS to verify they're being read correctly
+    app.logger.debug(f"MONGODB_SETTINGS from config: {app.config.get('MONGODB_SETTINGS')}")
+    
+    # Initialize MongoDB with the app using the MONGODB_SETTINGS
     db.init_app(app)
     
     # Enable CORS for all routes and origins
@@ -33,7 +34,6 @@ def create_app():
     
     # Log startup message
     app.logger.info('GSP Finance Backend Startup')
-
     # Test route to check MongoDB connection
     @app.route('/test-db', methods=['GET'])
     def test_db():
