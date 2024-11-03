@@ -3,9 +3,13 @@
 import pandas as pd
 import sys
 import json
-from models import AgreedPayments, PaymentInfo, RealPayments, Student, SchoolYearPeriod, Payment, Save, ChangeDetail, User, db
+from models import (
+    AgreedPayments, PaymentInfo, RealPayments, Student, SchoolYearPeriod,
+    Payment, Save, ChangeDetail, User, db
+)
 from mongoengine import connect, DoesNotExist, ValidationError
 from datetime import datetime
+from config import Config  # Import Config from config.py
 
 # Ensure utf-8 encoding is used for output (important for non-Latin characters)
 if sys.version_info >= (3, 7):
@@ -16,15 +20,26 @@ else:
     reload(sys)
     sys.setdefaultencoding('utf-8')
 
-# Connect to MongoDB
+# Connect to MongoDB using configuration from config.py
 def connect_db():
+    # Use MONGODB_SETTINGS from Config
     connect(
-        db='gspFinance',
-        host='localhost',
-        port=27017
-        # Add 'username', 'password', 'authentication_source' if required
+        db=Config.MONGODB_SETTINGS['db'],
+        host=Config.MONGODB_SETTINGS['host']
     )
     print("Connected to MongoDB.")
+
+# Create or get default User
+def get_or_create_default_user(username='admin', password='admin_password'):
+    try:
+        user = User.objects.get(username=username)
+        print(f"User '{username}' already exists.")
+    except DoesNotExist:
+        user = User(username=username)
+        user.set_password(password)
+        user.save()
+        print(f"Created default user '{username}'.")
+    return user
 
 # Create or get SchoolYearPeriod
 def get_or_create_school_year(name, start_date, end_date):
@@ -40,20 +55,6 @@ def get_or_create_school_year(name, start_date, end_date):
         school_year.save()
         print(f"Created SchoolYearPeriod '{name}'.")
     return school_year
-
-# Create or get default User
-def get_or_create_default_user(username='admin', password='admin_password'):
-    try:
-        user = User.objects.get(username=username)
-        print(f"User '{username}' already exists.")
-    except DoesNotExist:
-        user = User(
-            username=username
-        )
-        user.set_password(password)
-        user.save()
-        print(f"Created default user '{username}'.")
-    return user
 
 # Transform payment fields into Payment documents
 def create_payment_records(student, user, payment_type, month, amount, payment_date):
@@ -170,7 +171,7 @@ def process_student_row(row, school_year, user):
             m4_agreed=m9,
             m5_agreed=m9,
             m6_agreed=m9,
-            
+
             m9_transport_agreed=transport_fee,
             m10_transport_agreed=transport_fee,
             m11_transport_agreed=transport_fee,
@@ -181,7 +182,7 @@ def process_student_row(row, school_year, user):
             m4_transport_agreed=transport_fee,
             m5_transport_agreed=transport_fee,
             m6_transport_agreed=transport_fee,
-            
+
             insurance_agreed=1100  # Default agreed insurance
         ),
         real_payments=RealPayments(
@@ -195,7 +196,7 @@ def process_student_row(row, school_year, user):
             m4_real=real_payments['m4_real'],
             m5_real=real_payments['m5_real'],
             m6_real=real_payments['m6_real'],
-            
+
             m9_transport_real=transport_fee,
             m10_transport_real=transport_fee if real_payments['m10_real'] > 0 else 0,
             m11_transport_real=transport_fee if real_payments['m11_real'] > 0 else 0,
@@ -206,7 +207,7 @@ def process_student_row(row, school_year, user):
             m4_transport_real=transport_fee if real_payments['m4_real'] > 0 else 0,
             m5_transport_real=transport_fee if real_payments['m5_real'] > 0 else 0,
             m6_transport_real=transport_fee if real_payments['m6_real'] > 0 else 0,
-            
+
             insurance_real=insurance_fee
         )
     )
@@ -227,7 +228,7 @@ def process_student_row(row, school_year, user):
         ('m4_agreed', 'monthly'),
         ('m5_agreed', 'monthly'),
         ('m6_agreed', 'monthly'),
-        
+
         ('m9_real', 'monthly'),
         ('m10_real', 'monthly'),
         ('m11_real', 'monthly'),
@@ -238,7 +239,7 @@ def process_student_row(row, school_year, user):
         ('m4_real', 'monthly'),
         ('m5_real', 'monthly'),
         ('m6_real', 'monthly'),
-        
+
         ('m9_transport_agreed', 'transport'),
         ('m10_transport_agreed', 'transport'),
         ('m11_transport_agreed', 'transport'),
@@ -249,7 +250,7 @@ def process_student_row(row, school_year, user):
         ('m4_transport_agreed', 'transport'),
         ('m5_transport_agreed', 'transport'),
         ('m6_transport_agreed', 'transport'),
-        
+
         ('m9_transport_real', 'transport'),
         ('m10_transport_real', 'transport'),
         ('m11_transport_real', 'transport'),
@@ -260,14 +261,14 @@ def process_student_row(row, school_year, user):
         ('m4_transport_real', 'transport'),
         ('m5_transport_real', 'transport'),
         ('m6_transport_real', 'transport'),
-        
+
         # Insurance Fields
         ('insurance_agreed', 'insurance'),
         ('insurance_real', 'insurance'),
     ]
 
     for field, p_type in payment_fields:
-        amount = getattr(payment_info, field, 0)
+        amount = getattr(payment_info.real_payments if 'real' in field else payment_info.agreed_payments, field, 0)
         if 'agreed' in field:
             # Agreed payments are handled separately; skip creating Payment documents for them
             continue  # Alternatively, if you still want Payment documents for agreed payments, adjust accordingly
@@ -285,7 +286,7 @@ def process_student_row(row, school_year, user):
                     print(f"Invalid month value extracted from field '{field}'. Skipping.")
                     continue
                 payment_type = p_type  # 'monthly' or 'transport'
-            
+
             if amount > 0:
                 payment_date = datetime.utcnow()  # Adjust as needed
 
@@ -315,7 +316,7 @@ def process_student_row(row, school_year, user):
                     )
                     save.save()
                     print(f"Created Save record for Payment '{field}'.")
-    
+
 def process_student_data(file_path, school_year_id):
     # Load the Excel data into a pandas DataFrame
     df = pd.read_excel(file_path)
@@ -330,9 +331,8 @@ def process_student_data(file_path, school_year_id):
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
         print(f"Missing columns in Excel file: {missing_columns}")
-        # Continue processing by setting observations to empty string
-        # No action needed since observations are set to ""
-    
+        return
+
     # Fetch SchoolYearPeriod
     try:
         school_year = SchoolYearPeriod.objects.get(id=school_year_id)
@@ -340,19 +340,15 @@ def process_student_data(file_path, school_year_id):
     except DoesNotExist:
         print(f"SchoolYearPeriod with ID '{school_year_id}' does not exist.")
         return
-    
+
     # Fetch default User
-    try:
-        user = User.objects.get(username='admin')  # Replace with actual user if different
-    except DoesNotExist:
-        print("Default user 'admin' does not exist. Please create it first.")
-        return
-    
+    user = get_or_create_default_user()
+
     # Iterate through each row (student) in the DataFrame
     for index, row in df.iterrows():
         print(f"Processing row {index + 1}/{len(df)}")
         process_student_row(row, school_year, user)
-    
+
     print("Migration completed successfully.")
 
 if __name__ == '__main__':

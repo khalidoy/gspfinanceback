@@ -7,13 +7,16 @@ import logging
 from logging.handlers import RotatingFileHandler
 import os
 from flask_cors import CORS
+from dotenv import load_dotenv
+load_dotenv()
 
 # Initialize MongoEngine
 db = MongoEngine()
 
 def create_app():
     app = Flask(__name__)
-    
+    print(f"MONGO_URI: {os.getenv('MONGO_URI')}")
+
     # Load configuration from Config class
     app.config.from_object(Config)
     
@@ -23,46 +26,17 @@ def create_app():
     # Initialize MongoDB with the app using the MONGODB_SETTINGS
     db.init_app(app)
     
-    # Enable CORS for all routes and origins
-    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False)
-
     # Register Blueprints
     register_blueprints(app)
     
+    # Enable CORS for all routes and origins
+    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False,intercept_exceptions=True)
     # Setup Logging
     setup_logging(app)
     
     # Log startup message
     app.logger.info('GSP Finance Backend Startup')
-    # Test route to check MongoDB connection
-    @app.route('/test-db', methods=['GET'])
-    def test_db():
-        """
-        Test route to verify MongoDB connectivity and retrieve sample data from SchoolYearPeriod.
-        """
-        try:
-            from models import SchoolYearPeriod  # Ensure correct import
-
-            # Query the SchoolYearPeriod collection for the first 3 documents
-            periods = SchoolYearPeriod.objects.limit(3)
-            
-            # Format data for the response
-            period_data = [
-                {
-                    "name": period.name, 
-                    "start_date": period.start_date.isoformat(), 
-                    "end_date": period.end_date.isoformat()
-                } 
-                for period in periods
-            ]
-            
-            return jsonify({"status": "success", "message": "Connected to MongoDB", "data": period_data}), 200
-
-        except Exception as e:
-            # Log the error if the database connection fails
-            app.logger.error(f"Database connection failed: {e}")
-            return jsonify({"status": "error", "message": f"Database connection failed: {str(e)}"}), 500
-
+  
     return app
 
 def register_blueprints(app):

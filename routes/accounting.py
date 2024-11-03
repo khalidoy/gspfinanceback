@@ -1,17 +1,18 @@
 # accounting.py
 
 from flask import Blueprint, jsonify, request
+from flask_cors import CORS
 from models import Payment, Depence, DailyAccounting
 from datetime import datetime, time
 from mongoengine import ValidationError
 
 # Create the blueprint for daily accounting routes
 accounting_bp = Blueprint('accounting_bp', __name__)
-
+CORS(accounting_bp)
 # ------------------- Get Today's Payments and Expenses ----------------------------------------
 
 @accounting_bp.route('/daily/today', methods=['GET'])
-def get_today_payments_expenses():
+def get_today_payments_expenses(): 
     try:
         # Get today's date with time part set to 00:00:00
         today_start = datetime.combine(datetime.now().date(), time.min)
