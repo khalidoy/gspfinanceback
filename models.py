@@ -1,14 +1,12 @@
 # models.py
-import mongoengine as me
-from datetime import datetime
+
 from flask_mongoengine import MongoEngine
 from datetime import datetime
-from mongoengine import (
-    Document, EmbeddedDocument, StringField, DateTimeField, IntField,
-    FloatField, BooleanField, ListField, ReferenceField, EmbeddedDocumentField,
-    CASCADE, NULLIFY, PULL
-)
 import bcrypt
+from mongoengine import (
+    CASCADE, NULLIFY, PULL, StringField, DateTimeField, IntField, FloatField,
+    BooleanField, ListField, ReferenceField, EmbeddedDocumentField, EmbeddedDocument
+)
 
 db = MongoEngine()
 
@@ -79,7 +77,7 @@ class PaymentInfo(EmbeddedDocument):
 # Primary Models
 # ----------------------------------------
 
-class SchoolYearPeriod(Document):
+class SchoolYearPeriod(db.Document):
     name = StringField(required=True, unique=True)
     start_date = DateTimeField(required=True)
     end_date = DateTimeField(required=True)
@@ -93,13 +91,13 @@ class SchoolYearPeriod(Document):
 
     def to_json(self):
         return {
-             '_id': {'$oid': str(self.id)}, 
+            '_id': {'$oid': str(self.id)}, 
             'name': self.name,
             'start_date': self.start_date.isoformat(),
             'end_date': self.end_date.isoformat()
         }
 
-class User(Document):
+class User(db.Document):
     username = StringField(required=True, unique=True)
     password_hash = StringField(required=True)
 
@@ -123,16 +121,17 @@ class User(Document):
             # Do not expose password_hash
         }
 
-class Student(Document):
+class Student(db.Document):
     name = StringField(required=True)
     school_year = ReferenceField('SchoolYearPeriod', required=True, reverse_delete_rule=CASCADE)
     isNew = BooleanField(default=False)
     isLeft = BooleanField(default=False)
-    joined_month = IntField(min_value=1, max_value=12,default=9)
+    joined_month = IntField(min_value=1, max_value=12, default=9)
     observations = StringField()
     payments = EmbeddedDocumentField(PaymentInfo)
     left_date = DateTimeField()
     isSpecial = BooleanField(default=False)
+
     meta = {
         'collection': 'students',
         'indexes': [
@@ -154,7 +153,7 @@ class Student(Document):
             'left_date': self.left_date.isoformat() if self.left_date else None
         }
 
-class Save(Document):
+class Save(db.Document):
     student = ReferenceField('Student', required=True, reverse_delete_rule=CASCADE)
     user = ReferenceField('User', required=True, reverse_delete_rule=NULLIFY)
     date = DateTimeField(default=datetime.utcnow)
@@ -181,17 +180,17 @@ class Save(Document):
         }
 
 # Embedded document for Fixed Expenses
-class FixedExpense(me.EmbeddedDocument):
-    expense_type = me.StringField(required=True)
-    expense_amount = me.FloatField(required=True)
+class FixedExpense(EmbeddedDocument):
+    expense_type = StringField(required=True)
+    expense_amount = FloatField(required=True)
 
 # Main model for monthly expenses (Depence)
-class Depence(me.Document):
-    type = me.StringField(required=True)  # For example, 'monthly'
-    description = me.StringField()
-    date = me.DateTimeField(required=True)  # The month for which these expenses apply
-    fixed_expenses = me.EmbeddedDocumentListField(FixedExpense)  # List of fixed expenses for the month
-    amount = me.FloatField(required=True)  # Total amount for all fixed expenses in that month
+class Depence(db.Document):
+    type = StringField(required=True)  # For example, 'monthly'
+    description = StringField()
+    date = DateTimeField(required=True)  # The month for which these expenses apply
+    fixed_expenses = ListField(EmbeddedDocumentField(FixedExpense))  # List of fixed expenses for the month
+    amount = FloatField(required=True)  # Total amount for all fixed expenses in that month
 
     def to_json(self):
         return {
@@ -208,9 +207,7 @@ class Depence(me.Document):
             "amount": self.amount  # Total amount for the month
         }
 
-
-
-class Payment(Document):
+class Payment(db.Document):
     student = ReferenceField('Student', required=True, reverse_delete_rule=CASCADE)
     user = ReferenceField('User', required=True, reverse_delete_rule=NULLIFY)
     date = DateTimeField(default=datetime.utcnow)
@@ -242,7 +239,7 @@ class Payment(Document):
             'month': self.month
         }
 
-class DailyAccounting(Document):
+class DailyAccounting(db.Document):
     date = DateTimeField(required=True, unique=True)
     payments = ListField(ReferenceField('Payment', reverse_delete_rule=PULL))
     daily_expenses = ListField(ReferenceField('Depence', reverse_delete_rule=PULL))

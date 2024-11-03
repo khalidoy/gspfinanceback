@@ -1,7 +1,6 @@
 # app.py
 
-from flask import Flask, jsonify
-from flask_mongoengine import MongoEngine
+from flask import Flask
 from config import Config
 import logging
 from logging.handlers import RotatingFileHandler
@@ -9,9 +8,6 @@ import os
 from flask_cors import CORS
 from dotenv import load_dotenv
 load_dotenv()
-
-# Initialize MongoEngine
-db = MongoEngine()
 
 def create_app():
     app = Flask(__name__)
@@ -24,13 +20,15 @@ def create_app():
     app.logger.debug(f"MONGODB_SETTINGS from config: {app.config.get('MONGODB_SETTINGS')}")
     
     # Initialize MongoDB with the app using the MONGODB_SETTINGS
+    from models import db  # Import db from models.py
     db.init_app(app)
     
     # Register Blueprints
     register_blueprints(app)
     
     # Enable CORS for all routes and origins
-    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False,intercept_exceptions=True)
+    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False, intercept_exceptions=True)
+    
     # Setup Logging
     setup_logging(app)
     
