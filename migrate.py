@@ -1,33 +1,48 @@
 # migrate.py
 
-import pandas as pd
 import sys
+import io
+import pandas as pd
 import json
-from models import (
-    AgreedPayments, PaymentInfo, RealPayments, Student, SchoolYearPeriod,
-    Payment, Save, ChangeDetail, User, db
-)
 from mongoengine import connect, DoesNotExist, ValidationError
 from datetime import datetime
-from config import Config  # Import Config from config.py
+from dotenv import load_dotenv  # Import dotenv to load .env file
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
+from config import Config  # Import Config after loading environment variables
 
 # Ensure utf-8 encoding is used for output (important for non-Latin characters)
 if sys.version_info >= (3, 7):
-    import io
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 else:
     import sys
+    from importlib import reload
     reload(sys)
     sys.setdefaultencoding('utf-8')
 
 # Connect to MongoDB using configuration from config.py
 def connect_db():
-    # Use MONGODB_SETTINGS from Config
-    connect(
-        db=Config.MONGODB_SETTINGS['db'],
-        host=Config.MONGODB_SETTINGS['host']
-    )
-    print("Connected to MongoDB.")
+    try:
+        connect(
+            host=Config.MONGODB_SETTINGS['host']
+            # db=Config.MONGODB_SETTINGS['db']  # Not needed if DB is included in the URI
+        )
+        print(f"Connected to MongoDB at: {Config.MONGODB_SETTINGS['host']}")
+    except Exception as e:
+        print(f"Failed to connect to MongoDB: {e}")
+        sys.exit(1)
+
+# Establish the connection before importing models
+connect_db()
+
+# Now import models after the connection is established
+from models import (
+    AgreedPayments, PaymentInfo, RealPayments, Student, SchoolYearPeriod,
+    Payment, Save, ChangeDetail, User, Depence, DailyAccounting
+)
 
 # Create or get default User
 def get_or_create_default_user(username='admin', password='admin_password'):
@@ -268,58 +283,63 @@ def process_student_row(row, school_year, user):
     ]
 
     for field, p_type in payment_fields:
-        amount = getattr(payment_info.real_payments if 'real' in field else payment_info.agreed_payments, field, 0)
         if 'agreed' in field:
             # Agreed payments are handled separately; skip creating Payment documents for them
             continue  # Alternatively, if you still want Payment documents for agreed payments, adjust accordingly
+
+        # Real payments
+        amount = getattr(payment_info.real_payments, field, 0)
+        if p_type == 'insurance':
+            payment_type = 'insurance'
+            month = None  # Insurance payments do not have a month
         else:
-            # Real payments
-            if p_type == 'insurance':
-                payment_type = 'insurance'
-                month = None  # Insurance payments do not have a month
-            else:
-                # Extract month number from field name, e.g., 'm9_real' -> 9
-                month_str = field.split('_')[0][1:]  # 'm9_real' -> '9'
-                try:
-                    month = int(month_str)
-                except ValueError:
-                    print(f"Invalid month value extracted from field '{field}'. Skipping.")
-                    continue
-                payment_type = p_type  # 'monthly' or 'transport'
+            # Extract month number from field name, e.g., 'm9_real' -> 9
+            month_str = field.split('_')[0][1:]  # 'm9_real' -> '9'
+            try:
+                month = int(month_str)
+            except ValueError:
+                print(f"Invalid month value extracted from field '{field}'. Skipping.")
+                continue
+            payment_type = p_type  # 'monthly' or 'transport'
 
-            if amount > 0:
-                payment_date = datetime.utcnow()  # Adjust as needed
+        if amount > 0:
+            payment_date = datetime.utcnow()  # Adjust as needed
 
-                payment = create_payment_records(
+            payment = create_payment_records(
+                student=student,
+                user=user,
+                payment_type=payment_type,
+                month=month,
+                amount=amount,
+                payment_date=payment_date
+            )
+            if payment:
+                # Create Save record for this payment
+                changes = [
+                    ChangeDetail(
+                        field_name=field,
+                        old_value=None,
+                        new_value=str(amount)
+                    )
+                ]
+                save = Save(
                     student=student,
                     user=user,
-                    payment_type=payment_type,
-                    month=month,
-                    amount=amount,
-                    payment_date=payment_date
+                    types=['payment'],
+                    changes=changes,
+                    date=payment_date
                 )
-                if payment:
-                    # Create Save record for this payment
-                    changes = [
-                        ChangeDetail(
-                            field_name=field,
-                            old_value=None,
-                            new_value=str(amount)
-                        )
-                    ]
-                    save = Save(
-                        student=student,
-                        user=user,
-                        types=['payment'],
-                        changes=changes,
-                        date=payment_date
-                    )
-                    save.save()
-                    print(f"Created Save record for Payment '{field}'.")
+                save.save()
+                print(f"Created Save record for Payment '{field}'.")
 
 def process_student_data(file_path, school_year_id):
     # Load the Excel data into a pandas DataFrame
-    df = pd.read_excel(file_path)
+    try:
+        df = pd.read_excel(file_path)
+        print(f"Loaded Excel file: {file_path}")
+    except Exception as e:
+        print(f"Failed to load Excel file '{file_path}': {e}")
+        return
 
     # Strip any leading/trailing spaces from column names
     df.columns = df.columns.str.strip()
@@ -352,7 +372,8 @@ def process_student_data(file_path, school_year_id):
     print("Migration completed successfully.")
 
 if __name__ == '__main__':
-    connect_db()
+    print("Starting migration script...")
+    # No need to call connect_db() here as it's already called above
     school_year_id = "67120eb278180a8e328b2d38"  # Provided SchoolYearPeriod ObjectId
     file_path = 'data/cleaned_students.xlsx'  # Replace with your actual file path
     process_student_data(file_path, school_year_id)

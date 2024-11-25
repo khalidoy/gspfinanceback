@@ -62,8 +62,19 @@ def calculate_monthly_payments(month, school_year_period_id):
         total_paid += real_payment + real_transport
         total_left += (agreed_payment + agreed_transport) - (real_payment + real_transport)
 
-        # If the student hasn't paid the full agreed amount or transport, add to unpaid list
+        # Initialize a flag to check if the student is unpaid
+        is_unpaid = False
+
+        # Original condition: real_payment < agreed_payment OR real_transport < agreed_transport
         if real_payment < agreed_payment or real_transport < agreed_transport:
+            is_unpaid = True
+
+        # Additional condition for month 9
+        if month == 9 and agreed_payment == 0 and real_payment == 0 and student.joined_month == 9:
+            is_unpaid = True
+
+        # If the student is unpaid, add to the unpaid_students list
+        if is_unpaid:
             unpaid_students.append({
                 'name': student.name,
                 'agreed_payment': agreed_payment,
