@@ -193,55 +193,267 @@ def create_or_update_monthly_expenses(month_id):
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-# ------------- Route to Populate Default Monthly Expenses -------------------
+# # ------------- Route to Populate Default Monthly Expenses -------------------
 
-@depences_bp.route('/monthly/populate_defaults', methods=['POST'])
-def populate_default_monthly_expenses():
+# @depences_bp.route('/monthly/populate_defaults', methods=['POST'])
+# def populate_default_monthly_expenses():
+#     try:
+#         default_expenses = [
+#             {"expense_type": "staff", "expense_amount": 290000},
+#             {"expense_type": "credit transport", "expense_amount": 30000},
+#             {"expense_type": "credit banque", "expense_amount": 138000},
+#             {"expense_type": "cnss", "expense_amount": 25000},
+#             {"expense_type": "Wifi", "expense_amount": 500},
+#             {"expense_type": "electricity/eau", "expense_amount": 5000},
+#             {"expense_type": "staf ete", "expense_amount": 10500},
+#             {"expense_type": "comptable", "expense_amount": 500},
+#         ]
+
+#         current_year = datetime.now().year
+
+#         for month_id in range(9, 13):  # September to December
+#             month_date = datetime(current_year, month_id, 1)
+#             depence = Depence.objects(date=month_date).first()
+#             if not depence:
+#                 fixed_expenses = [FixedExpense(**expense) for expense in default_expenses]
+#                 total_amount = sum(exp["expense_amount"] for exp in default_expenses)
+#                 new_depence = Depence(
+#                     type='monthly',
+#                     description=f'Default expenses for {month_date.strftime("%B")}',
+#                     date=month_date,
+#                     fixed_expenses=fixed_expenses,
+#                     amount=total_amount
+#                 )
+#                 new_depence.save()
+
+#         for month_id in range(1, 9):  # January to August
+#             month_date = datetime(current_year + 1, month_id, 1)
+#             depence = Depence.objects(date=month_date).first()
+#             if not depence:
+#                 fixed_expenses = [FixedExpense(**expense) for expense in default_expenses]
+#                 total_amount = sum(exp["expense_amount"] for exp in default_expenses)
+#                 new_depence = Depence(
+#                     type='monthly',
+#                     description=f'Default expenses for {month_date.strftime("%B")}',
+#                     date=month_date,
+#                     fixed_expenses=fixed_expenses,
+#                     amount=total_amount
+#                 )
+#                 new_depence.save()
+
+#         return jsonify({"status": "success", "message": "Default monthly expenses populated successfully."}), 201
+
+#     except Exception as e:
+#         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+
+from flask import jsonify
+from datetime import datetime
+from models import Depence, FixedExpense
+
+# ------------- Route to Populate Monthly Expenses -------------------
+
+@depences_bp.route('/monthly/populate_monthly_expenses', methods=['POST'])
+def populate_monthly_expenses():
     try:
-        default_expenses = [
-            {"expense_type": "staff", "expense_amount": 290000},
-            {"expense_type": "credit transport", "expense_amount": 30000},
-            {"expense_type": "credit banque", "expense_amount": 138000},
-            {"expense_type": "cnss", "expense_amount": 25000},
-            {"expense_type": "Wifi", "expense_amount": 500},
-            {"expense_type": "electricity/eau", "expense_amount": 5000},
-            {"expense_type": "staf ete", "expense_amount": 10500},
-            {"expense_type": "comptable", "expense_amount": 500},
-        ]
+        # Define the expenses for each month explicitly based on the structured table
+        monthly_expenses = {
+            "MOIS_09": [
+                {"expense_type": "FONCTIONNAIRE", "expense_amount": 286680},
+                {"expense_type": "FONCTIONNAIRE Mois ETE", "expense_amount": 10000},
+                {"expense_type": "CREDIT BANK", "expense_amount": 135151},
+                {"expense_type": "CNSS", "expense_amount": 23906},
+                {"expense_type": "WIFI", "expense_amount": 500},
+                {"expense_type": "Electricité+eau", "expense_amount": 2656.67},
+                {"expense_type": "Photocopie", "expense_amount": 6300},
+                {"expense_type": "Photocopie Divers", "expense_amount": 1939},
+                {"expense_type": "Comptable", "expense_amount": 5000},
+                {"expense_type": "Transport", "expense_amount": 30000},
+                {"expense_type": "Assurance Transport", "expense_amount": 4673.15},
+                {"expense_type": "Assurance Eleves", "expense_amount": 5371.51},
+                {"expense_type": "Diesel", "expense_amount": 4900},
+                {"expense_type": "Communication", "expense_amount": 3000},
+                {"expense_type": "Khadija Divers", "expense_amount": 6683},
+            ],
+            "MOIS_10": [
+                {"expense_type": "FONCTIONNAIRE", "expense_amount": 314145},
+                {"expense_type": "FONCTIONNAIRE Mois ETE", "expense_amount": 10000},
+                {"expense_type": "CREDIT BANK", "expense_amount": 135151},
+                {"expense_type": "CNSS", "expense_amount": 23906},
+                {"expense_type": "WIFI", "expense_amount": 500},
+                {"expense_type": "Electricité+eau", "expense_amount": 5057.66},
+                {"expense_type": "Photocopie", "expense_amount": 5750},
+                {"expense_type": "Photocopie Divers", "expense_amount": 3055},
+                {"expense_type": "Comptable", "expense_amount": 0},
+                {"expense_type": "Transport", "expense_amount": 30000},
+                {"expense_type": "Assurance Transport", "expense_amount": 4673.15},
+                {"expense_type": "Assurance Eleves", "expense_amount": 5000},
+                {"expense_type": "Diesel", "expense_amount": 4900},
+                {"expense_type": "Communication", "expense_amount": 3000},
+                {"expense_type": "Khadija Divers", "expense_amount": 6559},
+            ],
+            "MOIS_11": [
+                {"expense_type": "FONCTIONNAIRE", "expense_amount": 321925},
+                {"expense_type": "FONCTIONNAIRE Mois ETE", "expense_amount": 10000},
+                {"expense_type": "CREDIT BANK", "expense_amount": 135151},
+                {"expense_type": "CNSS", "expense_amount": 23906},
+                {"expense_type": "WIFI", "expense_amount": 500},
+                {"expense_type": "Electricité+eau", "expense_amount": 4984.25},
+                {"expense_type": "Photocopie", "expense_amount": 3000},
+                {"expense_type": "Photocopie Divers", "expense_amount": 4000},
+                {"expense_type": "Comptable", "expense_amount": 0},
+                {"expense_type": "Transport", "expense_amount": 30000},
+                {"expense_type": "Assurance Transport", "expense_amount": 4673.15},
+                {"expense_type": "Assurance Eleves", "expense_amount": 5000},
+                {"expense_type": "Diesel", "expense_amount": 5600},
+                {"expense_type": "Communication", "expense_amount": 3000},
+                {"expense_type": "Khadija Divers", "expense_amount": 5526},
+            ],
+            "MOIS_12": [
+                {"expense_type": "FONCTIONNAIRE", "expense_amount": 308070},
+                {"expense_type": "FONCTIONNAIRE Mois ETE", "expense_amount": 10000},
+                {"expense_type": "CREDIT BANK", "expense_amount": 135151},
+                {"expense_type": "CNSS", "expense_amount": 23906},
+                {"expense_type": "WIFI", "expense_amount": 500},
+                {"expense_type": "Electricité+eau", "expense_amount": 4978.48},
+                {"expense_type": "Photocopie", "expense_amount": 6000},
+                {"expense_type": "Photocopie Divers", "expense_amount": 4000},
+                {"expense_type": "Comptable", "expense_amount": 0},
+                {"expense_type": "Transport", "expense_amount": 30000},
+                {"expense_type": "Assurance Transport", "expense_amount": 4673.15},
+                {"expense_type": "Assurance Eleves", "expense_amount": 5000},
+                {"expense_type": "Diesel", "expense_amount": 4170},
+                {"expense_type": "Communication", "expense_amount": 3000},
+                {"expense_type": "Khadija Divers", "expense_amount": 6799},
+            ],
+            "MOIS_01": [
+                {"expense_type": "FONCTIONNAIRE", "expense_amount": 310000},
+                {"expense_type": "FONCTIONNAIRE Mois ETE", "expense_amount": 10000},
+                {"expense_type": "CREDIT BANK", "expense_amount": 135151},
+                {"expense_type": "CNSS", "expense_amount": 23906},
+                {"expense_type": "WIFI", "expense_amount": 500},
+                {"expense_type": "Electricité+eau", "expense_amount": 5000},
+                {"expense_type": "Photocopie", "expense_amount": 5000},
+                {"expense_type": "Photocopie Divers", "expense_amount": 4000},
+                {"expense_type": "Comptable", "expense_amount": 600},
+                {"expense_type": "Transport", "expense_amount": 30000},
+                {"expense_type": "Assurance Transport", "expense_amount": 0},
+                {"expense_type": "Assurance Eleves", "expense_amount": 0},
+                {"expense_type": "Diesel", "expense_amount": 5000},
+                {"expense_type": "Communication", "expense_amount": 6000},
+                {"expense_type": "Khadija Divers", "expense_amount": 6000},
+            ],
+            
+            "MOIS_02": [
+                {"expense_type": "FONCTIONNAIRE", "expense_amount": 310000},
+                {"expense_type": "FONCTIONNAIRE Mois ETE", "expense_amount": 10000},
+                {"expense_type": "CREDIT BANK", "expense_amount": 135151},
+                {"expense_type": "CNSS", "expense_amount": 23906},
+                {"expense_type": "WIFI", "expense_amount": 500},
+                {"expense_type": "Electricité+eau", "expense_amount": 5000},
+                {"expense_type": "Photocopie", "expense_amount": 5000},
+                {"expense_type": "Photocopie Divers", "expense_amount": 4000},
+                {"expense_type": "Comptable", "expense_amount": 600},
+                {"expense_type": "Transport", "expense_amount": 30000},
+                {"expense_type": "Assurance Transport", "expense_amount": 0},
+                {"expense_type": "Assurance Eleves", "expense_amount": 0},
+                {"expense_type": "Diesel", "expense_amount": 5000},
+                {"expense_type": "Communication", "expense_amount": 6000},
+                {"expense_type": "Khadija Divers", "expense_amount": 6000},
+            ],
+            "MOIS_03": [
+                {"expense_type": "FONCTIONNAIRE", "expense_amount": 310000},
+                {"expense_type": "FONCTIONNAIRE Mois ETE", "expense_amount": 10000},
+                {"expense_type": "CREDIT BANK", "expense_amount": 135151},
+                {"expense_type": "CNSS", "expense_amount": 23906},
+                {"expense_type": "WIFI", "expense_amount": 500},
+                {"expense_type": "Electricité+eau", "expense_amount": 5000},
+                {"expense_type": "Photocopie", "expense_amount": 5000},
+                {"expense_type": "Photocopie Divers", "expense_amount": 4000},
+                {"expense_type": "Comptable", "expense_amount": 600},
+                {"expense_type": "Transport", "expense_amount": 30000},
+                {"expense_type": "Assurance Transport", "expense_amount": 0},
+                {"expense_type": "Assurance Eleves", "expense_amount": 0},
+                {"expense_type": "Diesel", "expense_amount": 5000},
+                {"expense_type": "Communication", "expense_amount": 6000},
+                {"expense_type": "Khadija Divers", "expense_amount": 6000},
+            ],
+            "MOIS_04": [
+                {"expense_type": "FONCTIONNAIRE", "expense_amount": 310000},
+                {"expense_type": "FONCTIONNAIRE Mois ETE", "expense_amount": 10000},
+                {"expense_type": "CREDIT BANK", "expense_amount": 135151},
+                {"expense_type": "CNSS", "expense_amount": 23906},
+                {"expense_type": "WIFI", "expense_amount": 500},
+                {"expense_type": "Electricité+eau", "expense_amount": 5000},
+                {"expense_type": "Photocopie", "expense_amount": 5000},
+                {"expense_type": "Photocopie Divers", "expense_amount": 4000},
+                {"expense_type": "Comptable", "expense_amount": 600},
+                {"expense_type": "Transport", "expense_amount": 30000},
+                {"expense_type": "Assurance Transport", "expense_amount": 0},
+                {"expense_type": "Assurance Eleves", "expense_amount": 0},
+                {"expense_type": "Diesel", "expense_amount": 5000},
+                {"expense_type": "Communication", "expense_amount": 6000},
+                {"expense_type": "Khadija Divers", "expense_amount": 6000},
+            ],
+            "MOIS_05": [
+                {"expense_type": "FONCTIONNAIRE", "expense_amount": 310000},
+                {"expense_type": "FONCTIONNAIRE Mois ETE", "expense_amount": 10000},
+                {"expense_type": "CREDIT BANK", "expense_amount": 135151},
+                {"expense_type": "CNSS", "expense_amount": 23906},
+                {"expense_type": "WIFI", "expense_amount": 500},
+                {"expense_type": "Electricité+eau", "expense_amount": 5000},
+                {"expense_type": "Photocopie", "expense_amount": 5000},
+                {"expense_type": "Photocopie Divers", "expense_amount": 4000},
+                {"expense_type": "Comptable", "expense_amount": 600},
+                {"expense_type": "Transport", "expense_amount": 30000},
+                {"expense_type": "Assurance Transport", "expense_amount": 0},
+                {"expense_type": "Assurance Eleves", "expense_amount": 0},
+                {"expense_type": "Diesel", "expense_amount": 5000},
+                {"expense_type": "Communication", "expense_amount": 6000},
+                {"expense_type": "Khadija Divers", "expense_amount": 6000},
+            ],
+            "MOIS_06": [
+                {"expense_type": "FONCTIONNAIRE", "expense_amount": 310000},
+                {"expense_type": "FONCTIONNAIRE Mois ETE", "expense_amount": 10000},
+                {"expense_type": "CREDIT BANK", "expense_amount": 135151},
+                {"expense_type": "CNSS", "expense_amount": 23906},
+                {"expense_type": "WIFI", "expense_amount": 500},
+                {"expense_type": "Electricité+eau", "expense_amount": 5000},
+                {"expense_type": "Photocopie", "expense_amount": 5000},
+                {"expense_type": "Photocopie Divers", "expense_amount": 4000},
+                {"expense_type": "Comptable", "expense_amount": 600},
+                {"expense_type": "Transport", "expense_amount": 30000},
+                {"expense_type": "Assurance Transport", "expense_amount": 0},
+                {"expense_type": "Assurance Eleves", "expense_amount": 0},
+                {"expense_type": "Diesel", "expense_amount": 5000},
+                {"expense_type": "Communication", "expense_amount": 6000},
+                {"expense_type": "Khadija Divers", "expense_amount": 6000},
+            ]
+        }
+        # Insert data into MongoDB
+        for month, expenses in monthly_expenses.items():
+            month_number = int(month.split("_")[1])
+            year = datetime.now().year if month_number >= 9 else datetime.now().year + 1
+            month_date = datetime(year, month_number, 1)
 
-        current_year = datetime.now().year
-
-        for month_id in range(9, 13):  # September to December
-            month_date = datetime(current_year, month_id, 1)
+            # Check if entry already exists
             depence = Depence.objects(date=month_date).first()
             if not depence:
-                fixed_expenses = [FixedExpense(**expense) for expense in default_expenses]
-                total_amount = sum(exp["expense_amount"] for exp in default_expenses)
+                fixed_expenses = [
+                    FixedExpense(**expense) for expense in expenses if expense.get("expense_amount") is not None
+                ]
+                total_amount = sum(exp["expense_amount"] for exp in expenses if exp.get("expense_amount") is not None)
                 new_depence = Depence(
-                    type='monthly',
-                    description=f'Default expenses for {month_date.strftime("%B")}',
+                    type="monthly",
+                    description=f"Monthly expenses for {month_date.strftime('%B %Y')}",
                     date=month_date,
                     fixed_expenses=fixed_expenses,
-                    amount=total_amount
+                    amount=total_amount,
                 )
                 new_depence.save()
 
-        for month_id in range(1, 9):  # January to August
-            month_date = datetime(current_year + 1, month_id, 1)
-            depence = Depence.objects(date=month_date).first()
-            if not depence:
-                fixed_expenses = [FixedExpense(**expense) for expense in default_expenses]
-                total_amount = sum(exp["expense_amount"] for exp in default_expenses)
-                new_depence = Depence(
-                    type='monthly',
-                    description=f'Default expenses for {month_date.strftime("%B")}',
-                    date=month_date,
-                    fixed_expenses=fixed_expenses,
-                    amount=total_amount
-                )
-                new_depence.save()
-
-        return jsonify({"status": "success", "message": "Default monthly expenses populated successfully."}), 201
+        return jsonify({"status": "success", "message": "Monthly expenses populated successfully."}), 201
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

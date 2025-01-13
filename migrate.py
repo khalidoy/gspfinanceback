@@ -27,7 +27,11 @@ def connect_db():
         db=Config.MONGODB_SETTINGS['db'],
         host=Config.MONGODB_SETTINGS['host']
     )
-    print("Connected to MongoDB.")
+    db=Config.MONGODB_SETTINGS['db']
+    host=Config.MONGODB_SETTINGS['host']
+    print("Connected to MongoDB")
+    print("host :"+str(host))
+    print("db :"+str(db))
 
 # Create or get default User
 def get_or_create_default_user(username='admin', password='admin_password'):
