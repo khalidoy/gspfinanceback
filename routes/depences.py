@@ -250,7 +250,7 @@ def create_or_update_monthly_expenses(month_id):
 
 
 
-# ------------- Route to Populate Monthly Expenses -------------------
+
 
 @depences_bp.route('/monthly/populate_defaults', methods=['POST'])
 def populate_default_monthly_expenses():
@@ -342,7 +342,6 @@ def populate_default_monthly_expenses():
                 {"expense_type": "Communication", "expense_amount": 6000},
                 {"expense_type": "Khadija Divers", "expense_amount": 6000},
             ],
-            
             "MOIS_02": [
                 {"expense_type": "FONCTIONNAIRE", "expense_amount": 310000},
                 {"expense_type": "FONCTIONNAIRE Mois ETE", "expense_amount": 10000},
@@ -429,6 +428,7 @@ def populate_default_monthly_expenses():
                 {"expense_type": "Khadija Divers", "expense_amount": 6000},
             ]
         }
+
         # Insert data into MongoDB
         for month, expenses in monthly_expenses.items():
             month_number = int(month.split("_")[1])
@@ -437,7 +437,18 @@ def populate_default_monthly_expenses():
 
             # Check if entry already exists
             depence = Depence.objects(date=month_date).first()
-            if not depence:
+            if depence:
+                # Update existing entry with new expenses
+                depence.fixed_expenses = [
+                    FixedExpense(**expense) for expense in expenses if expense.get("expense_amount") is not None
+                ]
+                depence.amount = sum(
+                    exp["expense_amount"] for exp in expenses if exp.get("expense_amount") is not None
+                )
+                depence.description = f"Updated monthly expenses for {month_date.strftime('%B %Y')}"
+                depence.save()
+            else:
+                # Create new entry
                 fixed_expenses = [
                     FixedExpense(**expense) for expense in expenses if expense.get("expense_amount") is not None
                 ]
