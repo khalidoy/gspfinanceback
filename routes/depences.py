@@ -249,9 +249,6 @@ def create_or_update_monthly_expenses(month_id):
 
 
 
-
-
-
 @depences_bp.route('/monthly/populate_defaults', methods=['POST'])
 def populate_default_monthly_expenses():
     try:
@@ -429,9 +426,12 @@ def populate_default_monthly_expenses():
             ]
         }
 
-        # Insert data into MongoDB
+        # Iterate over each MOIS_XX key and insert/update MongoDB
         for month, expenses in monthly_expenses.items():
             month_number = int(month.split("_")[1])
+
+            # By default uses the current year logic:
+            # If you'd like to tie to a specific school year, change this to the correct year.
             year = datetime.now().year if month_number >= 9 else datetime.now().year + 1
             month_date = datetime(year, month_number, 1)
 
@@ -440,25 +440,33 @@ def populate_default_monthly_expenses():
             if depence:
                 # Update existing entry with new expenses
                 depence.fixed_expenses = [
-                    FixedExpense(**expense) for expense in expenses if expense.get("expense_amount") is not None
+                    FixedExpense(**expense)
+                    for expense in expenses
+                    if expense.get("expense_amount") is not None
                 ]
                 depence.amount = sum(
-                    exp["expense_amount"] for exp in expenses if exp.get("expense_amount") is not None
+                    exp["expense_amount"]
+                    for exp in expenses
+                    if exp.get("expense_amount") is not None
                 )
                 depence.description = f"Updated monthly expenses for {month_date.strftime('%B %Y')}"
                 depence.save()
             else:
                 # Create new entry
                 fixed_expenses = [
-                    FixedExpense(**expense) for expense in expenses if expense.get("expense_amount") is not None
+                    FixedExpense(**expense)
+                    for expense in expenses
+                    if expense.get("expense_amount") is not None
                 ]
-                total_amount = sum(exp["expense_amount"] for exp in expenses if exp.get("expense_amount") is not None)
+                total_amount = sum(exp["expense_amount"]
+                                   for exp in expenses
+                                   if exp.get("expense_amount") is not None)
                 new_depence = Depence(
                     type="monthly",
                     description=f"Monthly expenses for {month_date.strftime('%B %Y')}",
                     date=month_date,
                     fixed_expenses=fixed_expenses,
-                    amount=total_amount,
+                    amount=total_amount
                 )
                 new_depence.save()
 

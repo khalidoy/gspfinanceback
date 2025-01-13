@@ -7,41 +7,54 @@ from datetime import datetime
 
 reports_bp = Blueprint('reports', __name__)
 
+
 def calculate_monthly_data(month_num, year, school_year_period_id):
+    """
+    Calculates monthly data for a given month/year within a particular school year period.
+    Returns a dictionary containing:
+        - month
+        - total_monthly_agreed_payments
+        - total_transport_agreed_payments
+        - total_expenses (sum of Depence.amount within the month)
+        - net_profit (total_payments minus total_expenses)
+        - total_insurance_students
+    """
+
     # Initialize totals
     total_monthly_agreed_payments = 0
     total_transport_agreed_payments = 0
+    total_insurance_students = 0  # To count students who have insurance_agreed > 0
 
-    # Get agreed payments for all students for the given month within the selected school year period
+    # Get all students for the given SchoolYearPeriod
     students = Student.objects(school_year=school_year_period_id)
-    total_insurance_students = 0  # To count students who paid insurance
 
+    # Sum up agreed payments for monthly + transport
     for student in students:
         if student.payments and student.payments.agreed_payments:
             # Monthly agreed payments (e.g., m9_agreed, m10_agreed, etc.)
             monthly_payment = getattr(student.payments.agreed_payments, f'm{month_num}_agreed', 0)
             total_monthly_agreed_payments += monthly_payment
-            
+
             # Transport agreed payments (e.g., m9_transport_agreed, m10_transport_agreed, etc.)
             transport_payment = getattr(student.payments.agreed_payments, f'm{month_num}_transport_agreed', 0)
             total_transport_agreed_payments += transport_payment
 
-        # Count students who paid insurance
-        if student.payments.agreed_payments.insurance_agreed > 0:
-            total_insurance_students += 1
+            # Check if insurance is paid
+            if student.payments.agreed_payments.insurance_agreed > 0:
+                total_insurance_students += 1
 
-    # Construct the date range to match the specific month
+    # Construct the date range for the given month/year
     start_date = datetime(year, month_num, 1)
     if month_num == 12:
         end_date = datetime(year + 1, 1, 1)
     else:
         end_date = datetime(year, month_num + 1, 1)
 
-    # Get total expenses for that month from Depence model using a range query
+    # Fetch Depence entries within the month range and sum their amounts
     expenses = Depence.objects(Q(date__gte=start_date) & Q(date__lt=end_date))
     total_expenses = sum(expense.amount for expense in expenses)
 
-    # Calculate net profit: total payments - expenses
+    # Calculate net profit: total payments - total expenses
     total_payments = total_monthly_agreed_payments + total_transport_agreed_payments
     net_profit = total_payments - total_expenses
 
@@ -51,7 +64,7 @@ def calculate_monthly_data(month_num, year, school_year_period_id):
         "total_transport_agreed_payments": total_transport_agreed_payments,
         "total_expenses": total_expenses,
         "net_profit": net_profit,
-        "total_insurance_students": total_insurance_students  # Adding this to return data
+        "total_insurance_students": total_insurance_students
     }
 
 # Route for normal school profit report
