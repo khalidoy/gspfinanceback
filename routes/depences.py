@@ -248,14 +248,12 @@ def create_or_update_monthly_expenses(month_id):
 
 
 
-from flask import jsonify
-from datetime import datetime
-from models import Depence, FixedExpense
+
 
 # ------------- Route to Populate Monthly Expenses -------------------
 
-@depences_bp.route('/monthly/populate_monthly_expenses', methods=['POST'])
-def populate_monthly_expenses():
+@depences_bp.route('/monthly/populate_defaults', methods=['POST'])
+def populate_default_monthly_expenses():
     try:
         # Define the expenses for each month explicitly based on the structured table
         monthly_expenses = {
