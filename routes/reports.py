@@ -31,10 +31,14 @@ def calculate_monthly_data(month_num, year, school_year_period_id):
             total_insurance_students += 1
 
     # Construct the date range to match the specific month
-    month_date = datetime(year, month_num, 1)
+    start_date = datetime(year, month_num, 1)
+    if month_num == 12:
+        end_date = datetime(year + 1, 1, 1)
+    else:
+        end_date = datetime(year, month_num + 1, 1)
 
-    # Get total expenses for that month from Depence model
-    expenses = Depence.objects(date=month_date)
+    # Get total expenses for that month from Depence model using a range query
+    expenses = Depence.objects(Q(date__gte=start_date) & Q(date__lt=end_date))
     total_expenses = sum(expense.amount for expense in expenses)
 
     # Calculate net profit: total payments - expenses
@@ -49,7 +53,6 @@ def calculate_monthly_data(month_num, year, school_year_period_id):
         "net_profit": net_profit,
         "total_insurance_students": total_insurance_students  # Adding this to return data
     }
-
 
 # Route for normal school profit report
 @reports_bp.route('/normal_profit_report', methods=['GET'])
