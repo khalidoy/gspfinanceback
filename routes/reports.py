@@ -8,6 +8,9 @@ from datetime import datetime
 reports_bp = Blueprint('reports', __name__)
 
 
+
+# routes/reports.py
+
 def calculate_monthly_data(month_num, year, school_year_period_id):
     """
     Calculates monthly data for a given month/year within a particular school year period.
@@ -66,6 +69,60 @@ def calculate_monthly_data(month_num, year, school_year_period_id):
         "net_profit": net_profit,
         "total_insurance_students": total_insurance_students
     }
+
+@reports_bp.route('/normal_profit_report', methods=['GET'])
+def normal_profit_report():
+    try:
+        school_year_period_id = request.args.get('schoolyear_id')
+        if not school_year_period_id:
+            return jsonify({"status": "error", "message": "School Year Period ID is required"}), 400
+
+        school_year_period = SchoolYearPeriod.objects.get(id=school_year_period_id)
+
+        # e.g. 2024 for start_date, 2025 for end_date
+        start_year = school_year_period.start_date.year
+        end_year = school_year_period.end_date.year
+
+        report_data = []
+
+        # Loop through months 9 -> 12 (Sep -> Dec) of start_year
+        for month_num in range(9, 13):
+            month_data = calculate_monthly_data(month_num, start_year, school_year_period_id)
+            report_data.append(month_data)
+
+        # Loop through months 1 -> 6 (Jan -> Jun) of end_year
+        for month_num in range(1, 7):
+            month_data = calculate_monthly_data(month_num, end_year, school_year_period_id)
+            report_data.append(month_data)
+
+        # Calculate total insurance agreed payments (once per school year)
+        total_insurance = sum(student.payments.agreed_payments.insurance_agreed
+                              for student in Student.objects(school_year=school_year_period_id))
+        # Number of students who have insurance > 0
+        total_students_with_insurance = Student.objects(
+            school_year=school_year_period_id,
+            payments__agreed_payments__insurance_agreed__gt=0
+        ).count()
+
+        # Add a row for total insurance to the report
+        report_data.append({
+            "month": "total_insurance",
+            "total_monthly_agreed_payments": 0,
+            "total_transport_agreed_payments": 0,
+            "total_insurance_agreed_payments": total_insurance,
+            "total_expenses": 0,
+            "net_profit": total_insurance
+        })
+
+        return jsonify({
+            "status": "success",
+            "data": report_data,
+            "total_students_with_insurance": total_students_with_insurance,
+            "total_yearly_income": sum(row["net_profit"] for row in report_data)
+        }), 200
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # Route for normal school profit report
 @reports_bp.route('/normal_profit_report', methods=['GET'])

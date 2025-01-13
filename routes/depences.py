@@ -248,11 +248,24 @@ def create_or_update_monthly_expenses(month_id):
 
 
 
-
 @depences_bp.route('/monthly/populate_defaults', methods=['POST'])
 def populate_default_monthly_expenses():
     try:
-        # Define the expenses for each month explicitly based on the structured table
+        # -------------------------------------------------
+        # 1) Accept a schoolyear_id so we know which year(s) to populate
+        # -------------------------------------------------
+        school_year_period_id = request.args.get('schoolyear_id')
+        if not school_year_period_id:
+            return jsonify({"status": "error", "message": "School Year Period ID is required"}), 400
+
+        # Fetch the SchoolYearPeriod (e.g. 2024-09-01 -> 2025-06-30)
+        school_year_period = SchoolYearPeriod.objects.get(id=school_year_period_id)
+        start_year = school_year_period.start_date.year  # e.g. 2024
+        end_year   = school_year_period.end_date.year    # e.g. 2025
+
+        # -------------------------------------------------
+        # 2) Define monthly_expenses for all months (Sep -> Jun)
+        # -------------------------------------------------
         monthly_expenses = {
             "MOIS_09": [
                 {"expense_type": "FONCTIONNAIRE", "expense_amount": 286680},
@@ -426,41 +439,37 @@ def populate_default_monthly_expenses():
             ]
         }
 
-        # Iterate over each MOIS_XX key and insert/update MongoDB
-        for month, expenses in monthly_expenses.items():
-            month_number = int(month.split("_")[1])
+        # -------------------------------------------------
+        # 3) For each MOIS_XX, decide which year to use
+        #    - If month >= 9 => use start_year
+        #    - Else => use end_year
+        # -------------------------------------------------
+        for month_key, expenses_list in monthly_expenses.items():
+            month_num = int(month_key.split("_")[1])
 
-            # By default uses the current year logic:
-            # If you'd like to tie to a specific school year, change this to the correct year.
-            year = datetime.now().year if month_number >= 9 else datetime.now().year + 1
-            month_date = datetime(year, month_number, 1)
+            if 9 <= month_num <= 12:
+                year = start_year  # e.g., 2024
+            else:
+                year = end_year    # e.g., 2025
 
-            # Check if entry already exists
+            month_date = datetime(year, month_num, 1)
+
+            # Check if entry already exists for this date
             depence = Depence.objects(date=month_date).first()
+
             if depence:
-                # Update existing entry with new expenses
+                # Update existing entry
                 depence.fixed_expenses = [
-                    FixedExpense(**expense)
-                    for expense in expenses
-                    if expense.get("expense_amount") is not None
+                    FixedExpense(**expense) for expense in expenses_list
                 ]
-                depence.amount = sum(
-                    exp["expense_amount"]
-                    for exp in expenses
-                    if exp.get("expense_amount") is not None
-                )
+                depence.amount = sum(exp["expense_amount"] for exp in expenses_list)
                 depence.description = f"Updated monthly expenses for {month_date.strftime('%B %Y')}"
                 depence.save()
             else:
                 # Create new entry
-                fixed_expenses = [
-                    FixedExpense(**expense)
-                    for expense in expenses
-                    if expense.get("expense_amount") is not None
-                ]
-                total_amount = sum(exp["expense_amount"]
-                                   for exp in expenses
-                                   if exp.get("expense_amount") is not None)
+                fixed_expenses = [FixedExpense(**expense) for expense in expenses_list]
+                total_amount = sum(exp["expense_amount"] for exp in expenses_list)
+
                 new_depence = Depence(
                     type="monthly",
                     description=f"Monthly expenses for {month_date.strftime('%B %Y')}",
@@ -472,5 +481,7 @@ def populate_default_monthly_expenses():
 
         return jsonify({"status": "success", "message": "Monthly expenses populated successfully."}), 201
 
+    except DoesNotExist:
+        return jsonify({"status": "error", "message": "SchoolYearPeriod not found"}), 404
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
