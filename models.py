@@ -1,5 +1,5 @@
 # models.py
-
+from flask_mongoengine import MongoEngine
 from mongoengine import (
     Document, EmbeddedDocument, CASCADE, NULLIFY, PULL,
     StringField, DateTimeField, IntField, FloatField,
@@ -8,6 +8,8 @@ from mongoengine import (
 import bcrypt
 from datetime import datetime
 
+# Initialize MongoEngine
+db = MongoEngine()
 # ----------------------------------------
 # Embedded Documents
 # ----------------------------------------
