@@ -1,14 +1,12 @@
 # models.py
 
-from flask_mongoengine import MongoEngine
-from datetime import datetime
-import bcrypt
 from mongoengine import (
-    CASCADE, NULLIFY, PULL, StringField, DateTimeField, IntField, FloatField,
-    BooleanField, ListField, ReferenceField, EmbeddedDocumentField, EmbeddedDocument
+    Document, EmbeddedDocument, CASCADE, NULLIFY, PULL,
+    StringField, DateTimeField, IntField, FloatField,
+    BooleanField, ListField, ReferenceField, EmbeddedDocumentField
 )
-
-db = MongoEngine()
+import bcrypt
+from datetime import datetime
 
 # ----------------------------------------
 # Embedded Documents
@@ -77,7 +75,7 @@ class PaymentInfo(EmbeddedDocument):
 # Primary Models
 # ----------------------------------------
 
-class SchoolYearPeriod(db.Document):
+class SchoolYearPeriod(Document):
     name = StringField(required=True, unique=True)
     start_date = DateTimeField(required=True)
     end_date = DateTimeField(required=True)
@@ -97,7 +95,7 @@ class SchoolYearPeriod(db.Document):
             'end_date': self.end_date.isoformat()
         }
 
-class User(db.Document):
+class User(Document):
     username = StringField(required=True, unique=True)
     password_hash = StringField(required=True)
 
@@ -121,7 +119,7 @@ class User(db.Document):
             # Do not expose password_hash
         }
 
-class Student(db.Document):
+class Student(Document):
     name = StringField(required=True)
     school_year = ReferenceField('SchoolYearPeriod', required=True, reverse_delete_rule=CASCADE)
     isNew = BooleanField(default=False)
@@ -153,7 +151,7 @@ class Student(db.Document):
             'left_date': self.left_date.isoformat() if self.left_date else None
         }
 
-class Save(db.Document):
+class Save(Document):
     student = ReferenceField('Student', required=True, reverse_delete_rule=CASCADE)
     user = ReferenceField('User', required=True, reverse_delete_rule=NULLIFY)
     date = DateTimeField(default=datetime.utcnow)
@@ -185,7 +183,7 @@ class FixedExpense(EmbeddedDocument):
     expense_amount = FloatField(required=True)
 
 # Main model for monthly expenses (Depence)
-class Depence(db.Document):
+class Depence(Document):
     type = StringField(required=True)  # For example, 'monthly'
     description = StringField()
     date = DateTimeField(required=True)  # The month for which these expenses apply
@@ -207,7 +205,7 @@ class Depence(db.Document):
             "amount": self.amount  # Total amount for the month
         }
 
-class Payment(db.Document):
+class Payment(Document):
     student = ReferenceField('Student', required=True, reverse_delete_rule=CASCADE)
     user = ReferenceField('User', required=True, reverse_delete_rule=NULLIFY)
     date = DateTimeField(default=datetime.utcnow)
@@ -239,7 +237,7 @@ class Payment(db.Document):
             'month': self.month
         }
 
-class DailyAccounting(db.Document):
+class DailyAccounting(Document):
     date = DateTimeField(required=True, unique=True)
     payments = ListField(ReferenceField('Payment', reverse_delete_rule=PULL))
     daily_expenses = ListField(ReferenceField('Depence', reverse_delete_rule=PULL))
