@@ -1,60 +1,60 @@
 # routes/reports.py
 
-from flask import Blueprint, json, jsonify, request
+from flask import Blueprint, jsonify, request
 from models import Student, Depence, SchoolYearPeriod
 from mongoengine import Q
-from datetime import datetime
+from datetime import datetime,timezone
+import json
+import logging
+
+
 
 reports_bp = Blueprint('reports', __name__)
 
-
 def calculate_monthly_data(month_num, year, school_year_period_id):
     """
-    Calculates monthly data for a given month/year within a particular school year period.
-    Returns a dictionary containing:
-        - month
-        - total_monthly_agreed_payments
-        - total_transport_agreed_payments
-        - total_expenses (sum of Depence.amount within the month)
-        - net_profit (total_payments minus total_expenses)
-        - total_insurance_students
+    Returns:
+      - month
+      - total_monthly_agreed_payments
+      - total_transport_agreed_payments
+      - total_expenses
+      - net_profit
+      - total_insurance_students
     """
 
-    # Initialize totals
+    # Totals
     total_monthly_agreed_payments = 0
     total_transport_agreed_payments = 0
-    total_insurance_students = 0  # To count students who have insurance_agreed > 0
+    total_insurance_students = 0
 
-    # Get all students for the given SchoolYearPeriod
+    # Sum payments from all students in the given SchoolYearPeriod
     students = Student.objects(school_year=school_year_period_id)
-
-    # Sum up agreed payments for monthly + transport
     for student in students:
         if student.payments and student.payments.agreed_payments:
-            # Monthly agreed payments (e.g., m9_agreed, m10_agreed, etc.)
             monthly_payment = getattr(student.payments.agreed_payments, f'm{month_num}_agreed', 0)
-            total_monthly_agreed_payments += monthly_payment
-
-            # Transport agreed payments (e.g., m9_transport_agreed, m10_transport_agreed, etc.)
             transport_payment = getattr(student.payments.agreed_payments, f'm{month_num}_transport_agreed', 0)
+            total_monthly_agreed_payments += monthly_payment
             total_transport_agreed_payments += transport_payment
 
-            # Check if insurance is paid
+            # If insurance is paid
             if student.payments.agreed_payments.insurance_agreed > 0:
                 total_insurance_students += 1
 
-    # Construct the date range for the given month/year
-    start_date = datetime(year, month_num, 1)
+    # Make start_date and end_date timezone-aware (UTC)
+    start_date = datetime(year, month_num, 1, tzinfo=timezone.utc)
     if month_num == 12:
-        end_date = datetime(year + 1, 1, 1)
+        end_date = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
     else:
-        end_date = datetime(year, month_num + 1, 1)
+        end_date = datetime(year, month_num + 1, 1, tzinfo=timezone.utc)
 
-    # Fetch Depence entries within the month range and sum their amounts
+    print(f"Querying Depence from {start_date} to {end_date}")
+
+    # Sum expenses
     expenses = Depence.objects(Q(date__gte=start_date) & Q(date__lt=end_date))
-    total_expenses = sum(expense.amount for expense in expenses)
+    total_expenses = sum(dep.amount for dep in expenses)
 
-    # Calculate net profit: total payments - total expenses
+    print(f"Total expenses found: {total_expenses}")
+
     total_payments = total_monthly_agreed_payments + total_transport_agreed_payments
     net_profit = total_payments - total_expenses
 
@@ -66,7 +66,9 @@ def calculate_monthly_data(month_num, year, school_year_period_id):
         "net_profit": net_profit,
         "total_insurance_students": total_insurance_students
     }
-# Route for normal school profit report
+
+
+
 @reports_bp.route('/normal_profit_report', methods=['GET'])
 def normal_profit_report():
     try:
@@ -74,28 +76,33 @@ def normal_profit_report():
         if not school_year_period_id:
             return jsonify({"status": "error", "message": "School Year Period ID is required"}), 400
 
-        report_data = []
         school_year_period = SchoolYearPeriod.objects.get(id=school_year_period_id)
+        start_year = school_year_period.start_date.year  # e.g. 2024
+        end_year = school_year_period.end_date.year      # e.g. 2025
 
-        start_year = school_year_period.start_date.year
-        end_year = school_year_period.end_date.year
-
-        # Loop through the months: from September (9) to June (6)
-        for month_num in range(9, 13):  # September to December
+        report_data = []
+        # Months: 9..12 of start_year
+        for month_num in range(9, 13):
             month_data = calculate_monthly_data(month_num, start_year, school_year_period_id)
             report_data.append(month_data)
 
-        for month_num in range(1, 7):  # January to June
+        # Months: 1..6 of end_year
+        for month_num in range(1, 7):
             month_data = calculate_monthly_data(month_num, end_year, school_year_period_id)
             report_data.append(month_data)
 
-        # Calculate total insurance agreed payments (only once per school year period)
-        total_insurance = sum(student.payments.agreed_payments.insurance_agreed for student in Student.objects(school_year=school_year_period_id))
+        # Calculate total insurance & students with insurance
+        total_insurance = sum(
+            s.payments.agreed_payments.insurance_agreed
+            for s in Student.objects(school_year=school_year_period_id)
+            if s.payments and s.payments.agreed_payments
+        )
+        total_students_with_insurance = Student.objects(
+            school_year=school_year_period_id,
+            payments__agreed_payments__insurance_agreed__gt=0
+        ).count()
 
-        # Calculate total number of students who paid insurance
-        total_students_with_insurance = Student.objects(school_year=school_year_period_id, payments__agreed_payments__insurance_agreed__gt=0).count()
-
-        # Add a row for total insurance to the report data
+        # Add a row for total insurance
         report_data.append({
             "month": "total_insurance",
             "total_monthly_agreed_payments": 0,
@@ -115,16 +122,14 @@ def normal_profit_report():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# ------------- Route to Retrieve Unknown Students with Zero Agreed Payments -------------------
-
 @reports_bp.route('/unknown_agreed_payments', methods=['GET'])
 def unknown_agreed_payments():
+    """Lists students who have all monthly agreed payments = 0."""
     try:
         school_year_period_id = request.args.get('schoolyear_id')
         if not school_year_period_id:
             return jsonify({"status": "error", "message": "School Year Period ID is required"}), 400
 
-        # Query students with all m9_agreed to m6_agreed equal to 0
         unknown_students = Student.objects(
             school_year=school_year_period_id,
             isLeft=False,

@@ -193,79 +193,20 @@ def create_or_update_monthly_expenses(month_id):
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-# # ------------- Route to Populate Default Monthly Expenses -------------------
-
-# @depences_bp.route('/monthly/populate_defaults', methods=['POST'])
-# def populate_default_monthly_expenses():
-#     try:
-#         default_expenses = [
-#             {"expense_type": "staff", "expense_amount": 290000},
-#             {"expense_type": "credit transport", "expense_amount": 30000},
-#             {"expense_type": "credit banque", "expense_amount": 138000},
-#             {"expense_type": "cnss", "expense_amount": 25000},
-#             {"expense_type": "Wifi", "expense_amount": 500},
-#             {"expense_type": "electricity/eau", "expense_amount": 5000},
-#             {"expense_type": "staf ete", "expense_amount": 10500},
-#             {"expense_type": "comptable", "expense_amount": 500},
-#         ]
-
-#         current_year = datetime.now().year
-
-#         for month_id in range(9, 13):  # September to December
-#             month_date = datetime(current_year, month_id, 1)
-#             depence = Depence.objects(date=month_date).first()
-#             if not depence:
-#                 fixed_expenses = [FixedExpense(**expense) for expense in default_expenses]
-#                 total_amount = sum(exp["expense_amount"] for exp in default_expenses)
-#                 new_depence = Depence(
-#                     type='monthly',
-#                     description=f'Default expenses for {month_date.strftime("%B")}',
-#                     date=month_date,
-#                     fixed_expenses=fixed_expenses,
-#                     amount=total_amount
-#                 )
-#                 new_depence.save()
-
-#         for month_id in range(1, 9):  # January to August
-#             month_date = datetime(current_year + 1, month_id, 1)
-#             depence = Depence.objects(date=month_date).first()
-#             if not depence:
-#                 fixed_expenses = [FixedExpense(**expense) for expense in default_expenses]
-#                 total_amount = sum(exp["expense_amount"] for exp in default_expenses)
-#                 new_depence = Depence(
-#                     type='monthly',
-#                     description=f'Default expenses for {month_date.strftime("%B")}',
-#                     date=month_date,
-#                     fixed_expenses=fixed_expenses,
-#                     amount=total_amount
-#                 )
-#                 new_depence.save()
-
-#         return jsonify({"status": "success", "message": "Default monthly expenses populated successfully."}), 201
-
-#     except Exception as e:
-#         return jsonify({"status": "error", "message": str(e)}), 500
-
-
-
 @depences_bp.route('/monthly/populate_defaults', methods=['POST'])
 def populate_default_monthly_expenses():
     try:
-        # -------------------------------------------------
-        # 1) Accept a schoolyear_id so we know which year(s) to populate
-        # -------------------------------------------------
+        # 1) Accept a schoolyear_id to determine which years to populate
         school_year_period_id = request.args.get('schoolyear_id')
         if not school_year_period_id:
             return jsonify({"status": "error", "message": "School Year Period ID is required"}), 400
 
-        # Fetch the SchoolYearPeriod (e.g. 2024-09-01 -> 2025-06-30)
+        # 2) Fetch the SchoolYearPeriod (e.g., 2024-09-01 -> 2025-06-30)
         school_year_period = SchoolYearPeriod.objects.get(id=school_year_period_id)
         start_year = school_year_period.start_date.year  # e.g. 2024
-        end_year   = school_year_period.end_date.year    # e.g. 2025
+        end_year = school_year_period.end_date.year      # e.g. 2025
 
-        # -------------------------------------------------
-        # 2) Define monthly_expenses for all months (Sep -> Jun)
-        # -------------------------------------------------
+        # 3) Define default expenses for months (Sep -> Dec) and (Jan -> Jun)
         monthly_expenses = {
             "MOIS_09": [
                 {"expense_type": "FONCTIONNAIRE", "expense_amount": 286680},
@@ -439,37 +380,25 @@ def populate_default_monthly_expenses():
             ]
         }
 
-        # -------------------------------------------------
-        # 3) For each MOIS_XX, decide which year to use
-        #    - If month >= 9 => use start_year
-        #    - Else => use end_year
-        # -------------------------------------------------
+        # 4) Populate or update Depence for each month
         for month_key, expenses_list in monthly_expenses.items():
             month_num = int(month_key.split("_")[1])
-
             if 9 <= month_num <= 12:
-                year = start_year  # e.g., 2024
+                year = start_year
             else:
-                year = end_year    # e.g., 2025
+                year = end_year
 
             month_date = datetime(year, month_num, 1)
-
-            # Check if entry already exists for this date
             depence = Depence.objects(date=month_date).first()
 
             if depence:
-                # Update existing entry
-                depence.fixed_expenses = [
-                    FixedExpense(**expense) for expense in expenses_list
-                ]
+                depence.fixed_expenses = [FixedExpense(**exp) for exp in expenses_list]
                 depence.amount = sum(exp["expense_amount"] for exp in expenses_list)
                 depence.description = f"Updated monthly expenses for {month_date.strftime('%B %Y')}"
                 depence.save()
             else:
-                # Create new entry
-                fixed_expenses = [FixedExpense(**expense) for expense in expenses_list]
+                fixed_expenses = [FixedExpense(**exp) for exp in expenses_list]
                 total_amount = sum(exp["expense_amount"] for exp in expenses_list)
-
                 new_depence = Depence(
                     type="monthly",
                     description=f"Monthly expenses for {month_date.strftime('%B %Y')}",
