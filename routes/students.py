@@ -1,7 +1,7 @@
 # routes/students.py
 
 from flask import Blueprint, request, jsonify
-from models import PaymentInfo, Student, SchoolYearPeriod, User, Save, ChangeDetail, db
+from models import PaymentInfo, Student, SchoolYearPeriod, User, Save, ChangeDetail, db, RealPayments, AgreedPayments
 from mongoengine import DoesNotExist, ValidationError
 from datetime import datetime
 import json
@@ -199,26 +199,21 @@ def flag_student_left(student_id):
 
     student.isLeft = True
     student.left_date = datetime.utcnow()
+
+    # New: Map real payments to agreed payments
+    try:
+        if student.payments and student.payments.real_payments:
+            real_payments_dict = student.payments.real_payments.to_mongo().to_dict()
+            agreed_payments_dict = {
+                key.replace('_real', '_agreed'): value
+                for key, value in real_payments_dict.items()
+            }
+            student.payments.agreed_payments = AgreedPayments(**agreed_payments_dict)
+        else:
+            return jsonify({'message': 'Real payments data is missing or invalid.'}), 500
+    except Exception as e:
+        return jsonify({'message': 'Failed to process real payments.', 'error': str(e)}), 500
+
     student.save()
-
-    # Create a Save record
-    # try:
-    #     user = User.objects.get(id=currentUserId)  # Use the defined currentUserId
-    # except DoesNotExist:
-    #     return jsonify({'message': 'User not found.'}), 500
-
-    # changes = [
-    #     ChangeDetail(field_name='isLeft', old_value=False, new_value=True),
-    #     ChangeDetail(field_name='left_date', old_value=None, new_value=student.left_date.isoformat())
-    # ]
-
-    # save = Save(
-    #     student=student,
-    #     user=user,
-    #     types=['flag_left'],
-    #     changes=changes,
-    #     date=student.left_date
-    # )
-    # save.save()
 
     return jsonify({'message': 'Student flagged as left successfully.'}), 200

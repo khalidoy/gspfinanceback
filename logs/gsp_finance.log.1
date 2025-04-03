@@ -1,61 +1,4 @@
-2024-10-30 18:07:45,360 ERROR: Exception on /schoolyearperiods/ [GET] [in C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py:825]
-Traceback (most recent call last):
-  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1455, in wsgi_app
-    response = self.full_dispatch_request()
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 869, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_cors\extension.py", line 194, in wrapped_function
-    return cors_after_request(app.make_response(f(*args, **kwargs)))
-                                                ^^^^^^^^^^^^^^^^^^
-  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 865, in full_dispatch_request
-    rv = self.preprocess_request()
-         ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1239, in preprocess_request
-    rv = self.ensure_sync(before_func)()
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py", line 26, in initialize_db
-    if db.connection is None:  # Only connect if not already connected
-       ^^^^^^^^^^^^^
-  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_mongoengine\__init__.py", line 138, in connection
-    return current_app.extensions["mongoengine"][self]["conn"]
-           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
-KeyError: 'mongoengine'
-2024-10-30 18:10:03,024 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:33]
-2024-11-02 23:24:15,200 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:33]
-2024-11-03 00:17:06,048 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:35]
-2024-11-03 00:25:57,679 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:35]
-2024-11-03 01:06:43,143 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
-2024-11-03 01:06:52,858 ERROR: Database connection failed: db already exists with different case already have: [gspFinance] trying to create [gspfinance], full error: {'ok': 0.0, 'errmsg': 'db already exists with different case already have: [gspFinance] trying to create [gspfinance]', 'code': 13297, 'codeName': 'DatabaseDifferCase'} [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:63]
-2024-11-03 01:08:13,383 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
-2024-11-03 01:08:18,693 ERROR: Database connection failed: db already exists with different case already have: [gspFinance] trying to create [gspfinance], full error: {'ok': 0.0, 'errmsg': 'db already exists with different case already have: [gspFinance] trying to create [gspfinance]', 'code': 13297, 'codeName': 'DatabaseDifferCase'} [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:63]
-2024-11-03 01:25:35,552 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
-2024-11-03 01:36:11,536 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
-2024-11-03 01:36:33,930 ERROR: Database connection failed: db already exists with different case already have: [gspFinance] trying to create [gspfinance], full error: {'ok': 0.0, 'errmsg': 'db already exists with different case already have: [gspFinance] trying to create [gspfinance]', 'code': 13297, 'codeName': 'DatabaseDifferCase'} [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:63]
-2024-11-03 01:51:19,552 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
-2024-11-03 01:51:30,780 ERROR: Database connection failed: db already exists with different case already have: [gspFinance] trying to create [gspfinance], full error: {'ok': 0.0, 'errmsg': 'db already exists with different case already have: [gspFinance] trying to create [gspfinance]', 'code': 13297, 'codeName': 'DatabaseDifferCase'} [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:63]
-2024-11-03 01:52:41,552 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
-2024-11-03 01:59:05,557 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
-2024-11-03 02:34:31,312 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
-2024-11-03 02:41:13,317 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
-2024-11-03 02:48:44,460 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
-2024-11-03 02:50:07,933 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
-2024-11-03 02:58:20,799 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
-2024-11-03 02:59:45,921 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
-2024-11-03 03:52:16,350 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
-2024-11-03 03:55:35,409 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
-2024-11-03 03:57:53,942 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:38]
-2024-11-03 04:28:24,639 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:38]
-2024-11-03 04:29:02,170 ERROR: Exception on /accounting/daily/today [GET] [in C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py:825]
-Traceback (most recent call last):
-  File "C:\Users\desktop\Desktop\gspFinance\gspfinanceback\routes\accounting.py", line 15, in get_today_payments_expenses
-    app.logger.info("Entered get_today_payments_expenses")
-    ^^^^^^^^^^
-AttributeError: module 'flask.app' has no attribute 'logger'
-
-During handling of the above exception, another exception occurred:
-
+2025-04-02 16:12:07,379 ERROR: Exception on /students/67ed61c56f1e2a63a3f8c91c/delete [PUT] [in C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py:825]
 Traceback (most recent call last):
   File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1455, in wsgi_app
     response = self.full_dispatch_request()
@@ -72,19 +15,11 @@ Traceback (most recent call last):
   File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 852, in dispatch_request
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\desktop\Desktop\gspFinance\gspfinanceback\routes\accounting.py", line 41, in get_today_payments_expenses
-    app.logger.error(f"Error in get_today_payments_expenses: {e}")
-    ^^^^^^^^^^
-AttributeError: module 'flask.app' has no attribute 'logger'
-2024-11-03 04:29:41,569 ERROR: Exception on /accounting/daily/today [GET] [in C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py:825]
-Traceback (most recent call last):
-  File "C:\Users\desktop\Desktop\gspFinance\gspfinanceback\routes\accounting.py", line 15, in get_today_payments_expenses
-    # Get today's date with time part set to 00:00:00
-    ^^^^^^^^^^
-AttributeError: module 'flask.app' has no attribute 'logger'
-
-During handling of the above exception, another exception occurred:
-
+  File "C:\Users\desktop\Desktop\gspFinance\gspfinanceback\routes\students.py", line 204, in flag_student_left
+    student.payments.agreed_payments = student.payments.real_payments.copy()
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'RealPayments' object has no attribute 'copy'
+2025-04-02 16:22:55,472 ERROR: Exception on /students/67ed61c56f1e2a63a3f8c91c/delete [PUT] [in C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py:825]
 Traceback (most recent call last):
   File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1455, in wsgi_app
     response = self.full_dispatch_request()
@@ -101,8 +36,82 @@ Traceback (most recent call last):
   File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 852, in dispatch_request
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\desktop\Desktop\gspFinance\gspfinanceback\routes\accounting.py", line 41, in get_today_payments_expenses
-    return jsonify({"status": "error", "message": str(e)}), 500
-    ^^^^^^^^^^
-AttributeError: module 'flask.app' has no attribute 'logger'
-2024-11-03 04:29:47,450 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:38]
+  File "C:\Users\desktop\Desktop\gspFinance\gspfinanceback\routes\students.py", line 204, in flag_student_left
+    real_payments_dict = { key: value for key, value in student.payments.real_payments._data.items() if not key.startswith('_') }
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'RealPayments' object has no attribute 'copy'
+2025-04-02 16:24:22,961 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
+2025-04-02 16:26:05,999 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
+2025-04-02 16:26:14,696 ERROR: Exception on /students/67ed61c56f1e2a63a3f8c91c/delete [PUT] [in C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py:825]
+Traceback (most recent call last):
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1455, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 869, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_cors\extension.py", line 194, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 867, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 852, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\desktop\Desktop\gspFinance\gspfinanceback\routes\students.py", line 210, in flag_student_left
+    student.save()
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\mongoengine\document.py", line 422, in save
+    self.validate(clean=clean)
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\mongoengine\base\document.py", line 440, in validate
+    raise ValidationError(message, errors=errors)
+mongoengine.errors.ValidationError: ValidationError (Student:67ed61c56f1e2a63a3f8c91c) (agreed_payments.Invalid embedded document instance provided to an EmbeddedDocumentField: ['payments'])
+2025-04-02 16:26:52,079 ERROR: Exception on /students/67ed61c56f1e2a63a3f8c91c/delete [PUT] [in C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py:825]
+Traceback (most recent call last):
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1455, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 869, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_cors\extension.py", line 194, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 867, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 852, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\desktop\Desktop\gspFinance\gspfinanceback\routes\students.py", line 210, in flag_student_left
+    student.save()
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\mongoengine\document.py", line 422, in save
+    self.validate(clean=clean)
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\mongoengine\base\document.py", line 440, in validate
+    raise ValidationError(message, errors=errors)
+mongoengine.errors.ValidationError: ValidationError (Student:67ed61c56f1e2a63a3f8c91c) (agreed_payments.Invalid embedded document instance provided to an EmbeddedDocumentField: ['payments'])
+2025-04-02 16:29:23,941 ERROR: Exception on /students/67ed61c56f1e2a63a3f8c91c/delete [PUT] [in C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py:825]
+Traceback (most recent call last):
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1455, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 869, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_cors\extension.py", line 194, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 867, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 852, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\desktop\Desktop\gspFinance\gspfinanceback\routes\students.py", line 210, in flag_student_left
+    student.save()
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\mongoengine\document.py", line 422, in save
+    self.validate(clean=clean)
+  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\mongoengine\base\document.py", line 440, in validate
+    raise ValidationError(message, errors=errors)
+mongoengine.errors.ValidationError: ValidationError (Student:67ed61c56f1e2a63a3f8c91c) (agreed_payments.Invalid embedded document instance provided to an EmbeddedDocumentField: ['payments'])
+2025-04-02 16:30:48,406 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]

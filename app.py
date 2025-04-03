@@ -1,13 +1,13 @@
 # app.py
-
+from dotenv import load_dotenv
+load_dotenv()
 from flask import Flask
 from config import Config
 import logging
 from logging.handlers import RotatingFileHandler
 import os
 from flask_cors import CORS
-from dotenv import load_dotenv
-load_dotenv()
+
 
 def create_app():
     app = Flask(__name__)

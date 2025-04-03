@@ -40,7 +40,8 @@ def calculate_monthly_payments(month, school_year_period):
     unpaid_students = []
     payment_distribution = defaultdict(int)
 
-    students = Student.objects(school_year=school_year_period, isLeft=False)
+    # Retrieve all students for the school year period
+    students = Student.objects(school_year=school_year_period)
 
     for student in students:
         # Ensure the student has a 'joined_month' attribute
@@ -51,6 +52,11 @@ def calculate_monthly_payments(month, school_year_period):
         if not has_joined_by_month(student.joined_month, month):
             continue  # Skip this student for the current month
 
+        # Check if the student has left and exclude months after they left
+        if hasattr(student, 'left_month') and student.left_month:
+            if not has_joined_by_month(month, student.left_month):
+                continue  # Skip this student for months after they left
+
         # Get the agreed and real payments for the current month
         agreed_payment = getattr(student.payments.agreed_payments, f'm{month}_agreed', 0)
         real_payment = getattr(student.payments.real_payments, f'm{month}_real', 0)
@@ -59,30 +65,27 @@ def calculate_monthly_payments(month, school_year_period):
         agreed_transport = getattr(student.payments.agreed_payments, f'm{month}_transport_agreed', 0)
         real_transport = getattr(student.payments.real_payments, f'm{month}_transport_real', 0)
 
-        # Calculate the total paid and total left
+        # Calculate the total paid
         total_paid += real_payment + real_transport
-        total_left += (agreed_payment + agreed_transport) - (real_payment + real_transport)
 
-        # Initialize a flag to check if the student is unpaid
-        is_unpaid = False
+        # Calculate the total left only for students who are still active
+        if not hasattr(student, 'left_month') or not student.left_month or has_joined_by_month(month, student.left_month):
+            total_left += (agreed_payment + agreed_transport) - (real_payment + real_transport)
 
-        # Original condition: real_payment < agreed_payment OR real_transport < agreed_transport
-        if real_payment < agreed_payment or real_transport < agreed_transport:
-            is_unpaid = True
+            # Check if the student is unpaid
+            is_unpaid = False
+            if real_payment < agreed_payment or real_transport < agreed_transport:
+                is_unpaid = True
 
-        # Additional condition for month 9
-        if month == 9 and agreed_payment == 0 and real_payment == 0 and student.joined_month == 9:
-            is_unpaid = True
-
-        # If the student is unpaid, add to the unpaid_students list
-        if is_unpaid:
-            unpaid_students.append({
-                'name': student.name,
-                'agreed_payment': agreed_payment,
-                'real_payment': real_payment,
-                'agreed_transport': agreed_transport,
-                'real_transport': real_transport
-            })
+            # If the student is unpaid, add to the unpaid_students list
+            if is_unpaid:
+                unpaid_students.append({
+                    'name': student.name,
+                    'agreed_payment': agreed_payment,
+                    'real_payment': real_payment,
+                    'agreed_transport': agreed_transport,
+                    'real_transport': real_transport
+                })
 
     # Determine the corresponding year based on the school year period
     if month >= 9:
