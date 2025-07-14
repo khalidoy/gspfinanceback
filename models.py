@@ -121,6 +121,32 @@ class User(Document):
             # Do not expose password_hash
         }
 
+# New models for Classe and its Groups
+class Classe(Document):
+    name = StringField(required=True, unique=True)
+    order = IntField(default=999)  # Default high value for new classes
+    meta = {
+        'collection': 'classes',
+        'indexes': [{'fields': ['name'], 'unique': True}]
+    }
+    
+    def to_json(self):
+        return {
+            '_id': {'$oid': str(self.id)},
+            'name': self.name,
+            'order': self.order
+        }
+
+class Group(Document):
+    name = StringField(required=True)
+    classe = ReferenceField('Classe', required=True, reverse_delete_rule=CASCADE)
+    meta = {
+        'collection': 'groups',
+        'indexes': [
+            {'fields': ['classe', 'name'], 'unique': True}
+        ]
+    }
+
 class Student(Document):
     name = StringField(required=True)
     school_year = ReferenceField('SchoolYearPeriod', required=True, reverse_delete_rule=CASCADE)
@@ -131,6 +157,8 @@ class Student(Document):
     payments = EmbeddedDocumentField(PaymentInfo)
     left_date = DateTimeField()
     isSpecial = BooleanField(default=False)
+    classe = ReferenceField('Classe', required=False, reverse_delete_rule=NULLIFY)  # Changed from required=True to required=False
+    group = ReferenceField('Group', reverse_delete_rule=NULLIFY)
 
     meta = {
         'collection': 'students',
@@ -141,16 +169,38 @@ class Student(Document):
     }
 
     def to_json(self):
+        classe_data = None
+        if self.classe:
+            try:
+                classe_doc = self.classe
+                classe_data = {
+                    'id': str(classe_doc.id),
+                    'name': classe_doc.name,
+                    'order': classe_doc.order
+                }
+            except Exception as e:
+                print(f"Warning: Could not fetch classe details for student {self.id}: {e}")
+                classe_data = {'id': str(self.classe.id)} if self.classe else None
+
+        payments_dict = {}
+        if self.payments:
+            payments_dict = self.payments.to_mongo().to_dict()
+        else:
+            payments_dict = {'agreed_payments': {}, 'real_payments': {}}
+
         return {
-            'id': str(self.id),
+            '_id': str(self.id),
             'name': self.name,
             'school_year': str(self.school_year.id) if self.school_year else None,
             'isNew': self.isNew,
             'isLeft': self.isLeft,
             'joined_month': self.joined_month,
             'observations': self.observations,
-            'payments': self.payments.to_mongo() if self.payments else {},
-            'left_date': self.left_date.isoformat() if self.left_date else None
+            'payments': payments_dict,
+            'left_date': self.left_date.isoformat() if self.left_date else None,
+            'classe': classe_data,
+            'group': str(self.group.id) if self.group else None,
+            'isSpecial': getattr(self, 'isSpecial', False)
         }
 
 class Save(Document):

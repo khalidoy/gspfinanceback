@@ -9,10 +9,22 @@ import json
 schoolyearperiods_bp = Blueprint('schoolyearperiods', __name__)
 
 @schoolyearperiods_bp.route('/', methods=['GET'])
-def get_schoolyearperiods():
+def get_school_year_periods():
     try:
-        school_years = SchoolYearPeriod.objects().order_by('-start_date').to_json()
-        return jsonify({"status": "success", "data": json.loads(school_years)}), 200
+        periods = list(SchoolYearPeriod.objects.order_by('-start_date'))
+        
+        # Convert to JSON-friendly format
+        periods_data = []
+        for period in periods:
+            periods_data.append({
+                '_id': str(period.id),
+                'name': period.name,
+                'start_date': period.start_date.isoformat(),
+                'end_date': period.end_date.isoformat()
+            })
+        
+        # Return empty array instead of error when no periods exist
+        return jsonify({"status": "success", "data": periods_data}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -33,14 +45,6 @@ def create_schoolyearperiod():
         return jsonify({'message': 'Invalid date format. Use ISO format (YYYY-MM-DD).'}), 400
 
     try:
-        # Find the most recent previous SchoolYearPeriod
-        previous_school_year = SchoolYearPeriod.objects(
-            end_date__lt=start_date
-        ).order_by('-end_date').first()
-
-        if not previous_school_year:
-            return jsonify({'message': 'No previous school year period found.'}), 400
-
         # Create and save the new SchoolYearPeriod
         school_year = SchoolYearPeriod(
             name=name,
@@ -49,40 +53,47 @@ def create_schoolyearperiod():
         )
         school_year.save()
 
-        # Query students from the previous school year period who are still active
-        past_year_students = Student.objects(
-            school_year=previous_school_year,
-            isLeft=False
-        )
+        # Find the most recent previous SchoolYearPeriod
+        previous_school_year = SchoolYearPeriod.objects(
+            end_date__lt=start_date
+        ).order_by('-end_date').first()
 
-        # List to hold new student documents
+        # Only copy students if a previous school year exists
         new_students = []
-
-        for student in past_year_students:
-            # Create a new PaymentInfo with all payments reset to 0
-            new_payment_info = PaymentInfo(
-                agreed_payments=AgreedPayments(),
-                real_payments=RealPayments()
+        if previous_school_year:
+            # Query students from the previous school year period who are still active
+            past_year_students = Student.objects(
+                school_year=previous_school_year,
+                isLeft=False
             )
 
-            # Create a new Student instance
-            new_student = Student(
-                name=student.name,
-                school_year=school_year,  # Assign to the new SchoolYearPeriod
-                isNew=False,              # Set isNew to False
-                isLeft=False,             # Set isLeft to False
-                joined_month=student.joined_month,  # Retain the same joined_month
-                observations=student.observations,  # Retain the same observations
-                payments=new_payment_info,          # Reset payments
-                left_date=None                      # Reset left_date
-            )
+            for student in past_year_students:
+                # Create a new PaymentInfo with all payments reset to 0
+                new_payment_info = PaymentInfo(
+                    agreed_payments=AgreedPayments(),
+                    real_payments=RealPayments()
+                )
 
-            # Append to the list of new students
-            new_students.append(new_student)
+                # Create a new Student instance
+                new_student = Student(
+                    name=student.name,
+                    school_year=school_year,  # Assign to the new SchoolYearPeriod
+                    isNew=False,              # Set isNew to False
+                    isLeft=False,             # Set isLeft to False
+                    joined_month=student.joined_month,  # Retain the same joined_month
+                    observations=student.observations,  # Retain the same observations
+                    payments=new_payment_info,          # Reset payments
+                    left_date=None,                     # Reset left_date
+                    # Ensure classe field is set to prevent errors
+                    classe=student.classe if hasattr(student, 'classe') and student.classe else None
+                )
 
-        # Bulk save all new students
-        if new_students:
-            Student.objects.insert(new_students)
+                # Append to the list of new students
+                new_students.append(new_student)
+
+            # Bulk save all new students
+            if new_students:
+                Student.objects.insert(new_students)
 
         return jsonify({
             "status": "success",

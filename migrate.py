@@ -25,7 +25,6 @@ else:
 
 # Connect to MongoDB using configuration from config.py
 def connect_db():
-<<<<<<< HEAD
     # Use MONGODB_SETTINGS from Config
     connect(
         db=Config.MONGODB_SETTINGS['db'],
@@ -36,26 +35,6 @@ def connect_db():
     print("Connected to MongoDB")
     print("host :"+str(host))
     print("db :"+str(db))
-=======
-    try:
-        connect(
-            host=Config.MONGODB_SETTINGS['host']
-            # db=Config.MONGODB_SETTINGS['db']  # Not needed if DB is included in the URI
-        )
-        print(f"Connected to MongoDB at: {Config.MONGODB_SETTINGS['host']}")
-    except Exception as e:
-        print(f"Failed to connect to MongoDB: {e}")
-        sys.exit(1)
-
-# Establish the connection before importing models
-connect_db()
-
-# Now import models after the connection is established
-from models import (
-    AgreedPayments, PaymentInfo, RealPayments, Student, SchoolYearPeriod,
-    Payment, Save, ChangeDetail, User, Depence, DailyAccounting
-)
->>>>>>> dd2373cbfc987ecea76ade053ff99627bd25067e
 
 # Create or get default User
 def get_or_create_default_user(username='admin', password='admin_password'):

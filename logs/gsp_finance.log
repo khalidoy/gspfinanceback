@@ -1,29 +1,27 @@
-2025-04-02 16:33:18,942 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
-2025-04-02 16:33:26,217 ERROR: Exception on /students/67ed61c56f1e2a63a3f8c91c/delete [PUT] [in C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py:825]
-Traceback (most recent call last):
-  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1455, in wsgi_app
-    response = self.full_dispatch_request()
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 869, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_cors\extension.py", line 194, in wrapped_function
-    return cors_after_request(app.make_response(f(*args, **kwargs)))
-                                                ^^^^^^^^^^^^^^^^^^
-  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 867, in full_dispatch_request
-    rv = self.dispatch_request()
-         ^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 852, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\desktop\Desktop\gspFinance\gspfinanceback\routes\students.py", line 213, in flag_student_left
-    student.save()
-  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\mongoengine\document.py", line 422, in save
-    self.validate(clean=clean)
-  File "C:\Users\desktop\AppData\Local\Programs\Python\Python312\Lib\site-packages\mongoengine\base\document.py", line 440, in validate
-    raise ValidationError(message, errors=errors)
-mongoengine.errors.ValidationError: ValidationError (Student:67ed61c56f1e2a63a3f8c91c) (agreed_payments.Invalid embedded document instance provided to an EmbeddedDocumentField: ['payments'])
-2025-04-02 16:35:04,536 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
-2025-04-02 16:41:19,299 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
-2025-04-02 17:01:45,716 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
-2025-04-03 03:47:39,406 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:36]
+2025-04-24 15:12:49,363 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-24 15:35:40,540 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-24 15:44:21,296 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-24 16:02:08,484 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-24 16:10:30,846 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-24 23:49:56,774 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-24 23:52:53,725 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-25 01:09:41,206 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-27 23:03:42,523 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-27 23:23:08,104 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-27 23:27:40,663 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-29 01:55:11,378 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-29 01:55:45,943 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-29 14:54:33,872 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-30 00:28:10,735 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-30 03:38:52,695 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-30 04:07:00,056 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-30 17:01:35,740 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-04-30 17:36:38,163 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-05-02 01:38:22,291 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-05-03 03:00:06,092 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-05-14 13:49:13,493 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-05-15 15:51:35,678 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-05-16 20:23:06,061 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-06-20 03:05:38,755 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-06-20 20:50:44,682 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]
+2025-07-14 04:48:22,066 INFO: GSP Finance Backend Startup [in C:\Users\desktop\Desktop\gspFinance\gspfinanceback\app.py:39]

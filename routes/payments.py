@@ -3,7 +3,7 @@
 from flask import Blueprint, request, jsonify
 from models import Payment, Student, User, PaymentInfo, AgreedPayments, RealPayments, Save, ChangeDetail
 from mongoengine import DoesNotExist, ValidationError
-from datetime import datetime
+from datetime import datetime, time
 import json
 import logging
 
@@ -32,151 +32,184 @@ def get_field(payment_type, month):
 def create_or_update_payment():
     data = request.get_json()
     logging.info(f"Received data in create_or_update_payment: {data}")
+    
     try:
+        # Log request headers for debugging
+        logging.info(f"Request headers: {dict(request.headers)}")
+        
         # Only handle REAL payments
-        if data['payment_type'].endswith('_agreed'):
+        if data.get('payment_type', '').endswith('_agreed'):
             raise ValidationError("This endpoint only handles REAL payments.")
 
         # Validate required fields
         required_fields = ['student_id', 'user_id', 'payment_type', 'amount']
         for field in required_fields:
             if field not in data:
+                logging.error(f"Missing required field: {field}")
                 raise KeyError(field)
 
         # Retrieve student and user
-        student = Student.objects.get(id=data['student_id'])
-        user = User.objects.get(id=data['user_id'])
+        student_id = data['student_id']
+        user_id = data['user_id']
         payment_type = data['payment_type']
+        
+        try:
+            student = Student.objects.get(id=student_id)
+            logging.info(f"Found student: {student.name} (ID: {student_id})")
+        except DoesNotExist:
+            logging.error(f"Student not found: {student_id}")
+            raise DoesNotExist(f"Student with ID {student_id} not found")
+            
+        try:
+            user = User.objects.get(id=user_id)
+            logging.info(f"Found user: {user.username} (ID: {user_id})")
+        except DoesNotExist:
+            logging.error(f"User not found: {user_id}")
+            raise DoesNotExist(f"User with ID {user_id} not found")
+            
         month = data.get('month')  # May be None for insurance payments
+        amount = float(data['amount'])
+        
+        logging.info(f"Processing payment: Type={payment_type}, Month={month}, Amount={amount}")
 
         # Validate 'month' field for non-insurance payments
         if payment_type not in ['insurance'] and month is None:
+            logging.error("Month is required for non-insurance payments")
             raise ValidationError("Field 'month' is required for non-insurance payments.")
 
-        new_amount = data['amount']
-
-        # Find existing payment for the student in the specified month and type
-        existing_payment = Payment.objects(
-            student=student, payment_type=payment_type, month=month
-        ).first()
-
-        payment_info = student.payments or PaymentInfo()
-
-        # Ensure that real_payments exists as an EmbeddedDocument
-        if not payment_info.real_payments:
-            payment_info.real_payments = RealPayments()
-
-        # Determine the specific field to update
-        field = get_field(payment_type, month)
-        if not field:
+        # Determine the real and agreed payment field names
+        real_field = None
+        agreed_field = None
+        
+        if payment_type == 'monthly':
+            real_field = f"m{month}_real"
+            agreed_field = f"m{month}_agreed"
+        elif payment_type == 'transport':
+            real_field = f"m{month}_transport_real"
+            agreed_field = f"m{month}_transport_agreed"
+        elif payment_type == 'insurance':
+            real_field = 'insurance_real'
+            agreed_field = 'insurance_agreed'
+        else:
             raise ValidationError(f"Invalid payment_type: {payment_type}")
 
-        # If the amount is 0, delete the existing payment if it exists
-        if new_amount == 0:
+        # Find existing payment for the student in the specified month and type
+        try:
+            today_start = datetime.combine(datetime.now().date(), time.min)
+            today_end = datetime.combine(datetime.now().date(), time.max)
+            
+            logging.info(f"Checking for existing payments between {today_start} and {today_end}")
+            
+            existing_payment = Payment.objects(
+                student=student, 
+                payment_type=payment_type, 
+                month=month,
+                date__gte=today_start,
+                date__lt=today_end
+            ).first()
+            
             if existing_payment:
-                # Reset the specific field in real_payments
-                setattr(payment_info.real_payments, field, 0)
-                student.payments = payment_info
-                student.save()
+                logging.info(f"Found existing payment: {existing_payment.id}")
+            else:
+                logging.info("No existing payment found, will create new")
+        except Exception as e:
+            logging.error(f"Error checking for existing payments: {e}")
+            raise
 
-                # Delete payment
-                existing_payment.delete()
+        # Make sure student has payment structures initialized
+        if not student.payments:
+            student.payments = PaymentInfo(agreed_payments=AgreedPayments(), real_payments=RealPayments())
+        if not student.payments.agreed_payments:
+            student.payments.agreed_payments = AgreedPayments()
+        if not student.payments.real_payments:
+            student.payments.real_payments = RealPayments()
 
-                # Record the deletion
-                changes = [
-                    ChangeDetail(
-                        field_name=field,
-                        old_value=json.dumps(existing_payment.to_json()),
-                        new_value='0'  # Indicates reset
-                    )
-                ]
-                # save_record = Save(
-                #     student=student,
-                #     user=user,
-                #     types=['payment'],
-                #     changes=changes,
-                #     date=datetime.utcnow()
-                # )
-                # save_record.save()
+        # Ensure real payment is not greater than agreed payment
+        # If it is, update agreed payment AND propagate to future months
+        changes = []
+        current_agreed_value = getattr(student.payments.agreed_payments, agreed_field, 0.0)
+        student_real_payment = getattr(student.payments.real_payments, real_field, 0.0)
 
-            return jsonify({"status": "success", "message": "Payment deleted"}), 200
+        # Update the real payment field on the student
+        setattr(student.payments.real_payments, real_field, amount)
+        changes.append(ChangeDetail(
+            field_name=f'real_payments.{real_field}', 
+            old_value=str(student_real_payment), 
+            new_value=str(amount)
+        ))
 
-        # If payment exists, update it (modification of the existing payment)
-        if existing_payment:
-            old_payment_data = existing_payment.to_json()
-            existing_payment.amount = new_amount
-            existing_payment.save()
+        # If real > agreed, update agreed for this month and propagate to subsequent months
+        if amount > current_agreed_value:
+            setattr(student.payments.agreed_payments, agreed_field, amount)
+            changes.append(ChangeDetail(
+                field_name=f'agreed_payments.{agreed_field}', 
+                old_value=str(current_agreed_value), 
+                new_value=str(amount)
+            ))
 
-            # Update payment info in student document
-            setattr(payment_info.real_payments, field, new_amount)
-            student.payments = payment_info
+            # Propagate to subsequent months if it's monthly or transport payment
+            if payment_type in ['monthly', 'transport'] and month is not None:
+                # Define month order for subsequent updates
+                MONTH_ORDER = ['m9', 'm10', 'm11', 'm12', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6']
+                month_key = f"m{month}"
+
+                try:
+                    current_month_index = MONTH_ORDER.index(month_key)
+                    for i in range(current_month_index + 1, len(MONTH_ORDER)):
+                        subsequent_month = MONTH_ORDER[i]
+                        subsequent_agreed_field = None
+
+                        if payment_type == 'monthly':
+                            subsequent_agreed_field = f"{subsequent_month}_agreed"
+                        elif payment_type == 'transport':
+                            subsequent_agreed_field = f"{subsequent_month}_transport_agreed"
+
+                        if subsequent_agreed_field:
+                            old_subsequent_value = getattr(student.payments.agreed_payments, subsequent_agreed_field, 0.0)
+                            if amount > old_subsequent_value:
+                                setattr(student.payments.agreed_payments, subsequent_agreed_field, amount)
+                                changes.append(ChangeDetail(
+                                    field_name=f'agreed_payments.{subsequent_agreed_field}', 
+                                    old_value=str(old_subsequent_value), 
+                                    new_value=str(amount)
+                                ))
+                except ValueError:
+                    logging.error(f"Invalid month key: {month_key}")
+                except Exception as e:
+                    logging.error(f"Error updating subsequent months: {e}")
+
+        # Save the updated student record
+        if changes:
             student.save()
+            logging.info(f"Updated student payment information with {len(changes)} changes")
 
-            # Record the update
-            changes = [
-                ChangeDetail(
-                    field_name=field,
-                    old_value=json.dumps(old_payment_data),
-                    new_value=json.dumps(existing_payment.to_json())
-                )
-            ]
-            # save_record = Save(
-            #     student=student,
-            #     user=user,
-            #     types=['payment'],
-            #     changes=changes,
-            #     date=datetime.utcnow()
-            # )
-            # save_record.save()
-
+        # If payment exists, update it
+        if existing_payment:
+            old_amount = existing_payment.amount
+            existing_payment.amount = amount
+            existing_payment.save()
+            logging.info(f"Updated payment {existing_payment.id}: {old_amount} -> {amount}")
             return jsonify({"status": "success", "data": existing_payment.to_json()}), 200
 
         # If no payment exists, create a new one
         else:
-            # For insurance payments, 'month' is not required
-            if payment_type == 'insurance':
+            try:
                 new_payment = Payment(
                     student=student,
                     user=user,
-                    amount=new_amount,
-                    payment_type=payment_type,
-                    month=None,  # Explicitly set month to None for insurance payments
-                    date=datetime.utcnow()
-                )
-            else:
-                new_payment = Payment(
-                    student=student,
-                    user=user,
-                    amount=new_amount,
+                    amount=amount,
                     payment_type=payment_type,
                     month=month,
                     date=datetime.utcnow()
                 )
-            new_payment.save()
-
-            # Update payment info in student document
-            setattr(payment_info.real_payments, field, new_payment.amount)
-            student.payments = payment_info
-            student.save()
-
-            # Record the creation
-            changes = [
-                ChangeDetail(
-                    field_name=field,
-                    old_value='0',
-                    new_value=json.dumps(new_payment.to_json())
-                )
-            ]
-            # save_record = Save(
-            #     student=student,
-            #     user=user,
-            #     types=['payment'],
-            #     changes=changes,
-            #     date=datetime.utcnow()
-            # )
-            # save_record.save()
-
-            return jsonify({"status": "success", "data": new_payment.to_json()}), 201
+                new_payment.save()
+                logging.info(f"Created new payment with ID: {new_payment.id}")
+                return jsonify({"status": "success", "data": new_payment.to_json()}), 201
+            except Exception as e:
+                logging.error(f"Error creating new payment: {e}")
+                import traceback
+                logging.error(traceback.format_exc())
+                raise
 
     except KeyError as e:
         logging.error(f"KeyError: Missing field {e}")
@@ -189,6 +222,8 @@ def create_or_update_payment():
         return jsonify({"status": "error", "message": str(e)}), 400
     except Exception as e:
         logging.error(f"Exception: {e}")
+        import traceback
+        logging.error(traceback.format_exc())
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @payments_bp.route('/agreed_changes', methods=['POST'])

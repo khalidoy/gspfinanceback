@@ -16,6 +16,9 @@ def create_app():
     # Load configuration from Config class
     app.config.from_object(Config)
     
+    # Set up session
+    app.secret_key = app.config.get('SECRET_KEY')
+    
     # Log the MONGODB_SETTINGS to verify they're being read correctly
     app.logger.debug(f"MONGODB_SETTINGS from config: {app.config.get('MONGODB_SETTINGS')}")
     
@@ -26,8 +29,8 @@ def create_app():
     # Register Blueprints
     register_blueprints(app)
     
-    # Enable CORS for all routes and origins
-    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False, intercept_exceptions=True)
+    # Enable CORS with credentials support for session cookies
+    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True, intercept_exceptions=True)
     
     # Setup Logging
     setup_logging(app)
@@ -49,19 +52,21 @@ def register_blueprints(app):
     from routes.dailyaccreport import dailyacc_bp
     from routes.transportreport import transport_bp  
     from routes.paymentsReport import payments_report_bp
-    
+    from routes.classes import classes_bp  # <-- Add this line
+
     # Register each blueprint with a URL prefix
     app.register_blueprint(auth_bp, url_prefix='/auth')
-    app.register_blueprint(students_bp, url_prefix='/students')
+    app.register_blueprint(students_bp, url_prefix='/students')  # Ensure students blueprint is registered correctly
     app.register_blueprint(payments_bp, url_prefix='/payments')
     app.register_blueprint(depences_bp, url_prefix='/depences')
     app.register_blueprint(accounting_bp, url_prefix='/accounting')
-    app.register_blueprint(schoolyearperiods_bp, url_prefix='/schoolyearperiods')
+    app.register_blueprint(schoolyearperiods_bp, url_prefix='/schoolyearperiods')  # Ensure schoolyearperiods route is registered
     app.register_blueprint(reports_bp, url_prefix='/reports')
     app.register_blueprint(creditreports_bp, url_prefix='/creditreports')
     app.register_blueprint(dailyacc_bp, url_prefix='/dailyacc')
     app.register_blueprint(transport_bp, url_prefix='/transport')
     app.register_blueprint(payments_report_bp, url_prefix='/payments-report')
+    app.register_blueprint(classes_bp, url_prefix='/classes')  # Add the url_prefix here
 
 def setup_logging(app):
     # Create logs directory if it doesn’t exist

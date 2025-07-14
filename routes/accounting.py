@@ -1,29 +1,44 @@
 # accounting.py
 
 from flask import Blueprint, app, jsonify, request
-from models import Payment, Depence, DailyAccounting
+from models import Payment, Depence, DailyAccounting, Student
 from datetime import datetime, time
 from mongoengine import ValidationError
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
 # Create the blueprint for daily accounting routes
 accounting_bp = Blueprint('accounting_bp', __name__)
-# ------------------- Get Today's Payments and Expenses ----------------------------------------
 
+# ------------------- Get Today's Payments and Expenses ----------------------------------------
 @accounting_bp.route('/daily/today', methods=['GET'])
 def get_today_payments_expenses(): 
     try:
-        print("Entered get_today_payments_expenses")
+        logging.info("Entered get_today_payments_expenses")
         # Get today's date with time part set to 00:00:00
         today_start = datetime.combine(datetime.now().date(), time.min)
         today_end = datetime.combine(datetime.now().date(), time.max)
 
-        # Fetch all payments made today, including the student name
+        logging.info(f"Fetching payments between {today_start} and {today_end}")
+        
+        # Fetch all payments made today
         today_payments = Payment.objects(date__gte=today_start, date__lt=today_end)
+        payment_count = len(today_payments)
+        logging.info(f"Found {payment_count} payments")
+        
+        # Log payment details for debugging
+        for i, payment in enumerate(today_payments):
+            student_name = payment.student.name if payment.student else "Unknown"
+            logging.info(f"Payment {i+1}: Student={student_name}, Amount={payment.amount}, Type={payment.payment_type}, Date={payment.date}")
+        
         payments_list = []
         for payment in today_payments:
             payment_data = payment.to_json()
             # Fetch and include the student name
             if payment.student:
-                payment_data['student'] = payment.student.name  # Add the student name
+                payment_data['student'] = payment.student.name
             payments_list.append(payment_data)
 
         # Fetch only daily-type expenses made today
@@ -37,8 +52,9 @@ def get_today_payments_expenses():
         }), 200
 
     except Exception as e:
-        print(f"Error in get_today_payments_expenses: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+        logging.error(f"Error in get_today_payments_expenses: {e}")
+        import traceback
+        logging.error(traceback.format_exc())
         return jsonify({"status": "error", "message": str(e)}), 500
 
 # ------------------- Validate Daily Accounting for Today ----------------------------------------
